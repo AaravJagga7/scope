@@ -1,0 +1,17 @@
+group: "M"
+name: "Factorial Interaction Matrix"
+description: "Multi-factor interaction grid exploring the joint coupling between traffic rate, horizontal scaling, DB pooling, and caching."
+defaults:
+  cpu_limit: "500m"
+  consumers: 2
+  seed: 42
+  split: "train"
+workload:
+  duration: 15
+  warmup_duration: 2
+matrix:
+  rps: [100, 300, 600]
+  profile: ["normal", "flash_sale"]
+  checkout_replicas: [1, 2, 4, 8]
+  db_pool_size: [10, 30, 60]
+  cache_enabled: [false, true]

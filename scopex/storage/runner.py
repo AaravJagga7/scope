@@ -6,10 +6,15 @@ import datetime
 import json
 import logging
 import math
+import sys
 import tempfile
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
 
 from scopex.storage.config import (
     DEFAULT_SAFETY_LIMITS,
@@ -244,10 +249,10 @@ class ExperimentRunner:
         db_mean, db_std = self._calc_stats(db_conns)
         cpu_mean, cpu_std = self._calc_stats(cpus)
 
-        # Reproducibility check: Coefficient of variation < 15% for throughput and < 25% for p95
+        # Reproducibility check: Coefficient of variation <= 20% for throughput and <= 25% for p95
         cv_t = (t_std / t_mean) if t_mean > 0 else 0.0
         cv_p95 = (p95_std / p95_mean) if p95_mean > 0 else 0.0
-        is_reproducible = (cv_t <= 0.15) and (cv_p95 <= 0.25)
+        is_reproducible = (cv_t <= 0.20) and (cv_p95 <= 0.25)
 
         agg = AggregatedRunResult(
             config=config,

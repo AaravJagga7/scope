@@ -1,0 +1,17 @@
+group: "C"
+name: "Horizontal Scaling Bottleneck Transition"
+description: "Varies checkout frontend replicas under high load with fixed database pool to observe frontend saturation shifting to database bottleneck."
+defaults:
+  db_pool_size: 50
+  cpu_limit: "500m"
+  cache_enabled: false
+  consumers: 2
+  seed: 42
+  split: "train"
+workload:
+  profile: "flash_sale"
+  rps: 500
+  duration: 15
+  warmup_duration: 2
+matrix:
+  checkout_replicas: [1, 2, 4, 6, 8, 10]

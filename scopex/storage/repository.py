@@ -48,6 +48,7 @@ class ExperimentRun:
     started_at: str
     completed_at: str
     config: ExperimentConfig
+    group_name: str = ""
     metrics: dict[str, Any] = field(default_factory=dict)
     throughput_rps: float = 0.0
     p50_latency_ms: float = 0.0
@@ -63,6 +64,7 @@ class ExperimentRun:
         return {
             "experiment_id": self.experiment_id,
             "run_id": self.run_id,
+            "group_name": self.group_name or self.config.tags.get("group", ""),
             "split": self.split,
             "status": self.status,
             "git_commit": self.git_commit,
@@ -114,6 +116,7 @@ class ExperimentRepository:
                 CREATE TABLE IF NOT EXISTS experiment_runs (
                     run_id TEXT PRIMARY KEY,
                     experiment_id TEXT NOT NULL,
+                    group_name TEXT DEFAULT '',
                     split TEXT NOT NULL,
                     status TEXT NOT NULL,
                     git_commit TEXT NOT NULL,
@@ -140,8 +143,13 @@ class ExperimentRepository:
                     metrics_json TEXT NOT NULL
                 )
             """)
+            try:
+                conn.execute("ALTER TABLE experiment_runs ADD COLUMN group_name TEXT DEFAULT ''")
+            except sqlite3.OperationalError:
+                pass  # column already exists
             conn.execute("CREATE INDEX IF NOT EXISTS idx_exp_id ON experiment_runs(experiment_id)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_split ON experiment_runs(split)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_group ON experiment_runs(group_name)")
             conn.commit()
 
     def save_run(self, run: ExperimentRun) -> None:
@@ -161,6 +169,35 @@ class ExperimentRepository:
 
         # Update Parquet export
         self.export_to_parquet()
+
+    def save_runs_batch(self, runs: list[ExperimentRun]) -> None:
+        """Persists multiple experiment trials in a single SQLite transaction and exports to Parquet."""
+        if not runs:
+            return
+
+        with sqlite3.connect(self.db_path) as conn:
+            for run in runs:
+                row = run.to_flat_dict()
+                columns = list(row.keys())
+                placeholders = ", ".join(["?"] * len(columns))
+                col_names = ", ".join(columns)
+                values = [row[c] for c in columns]
+                conn.execute(
+                    f"INSERT OR REPLACE INTO experiment_runs ({col_names}) VALUES ({placeholders})",
+                    values,
+                )
+            conn.commit()
+
+        self.export_to_parquet()
+
+    def count_runs(self, split: str | None = None) -> int:
+        """Returns total number of recorded runs, optionally filtered by split."""
+        with sqlite3.connect(self.db_path) as conn:
+            if split:
+                cur = conn.execute("SELECT COUNT(*) FROM experiment_runs WHERE split = ?", (split,))
+            else:
+                cur = conn.execute("SELECT COUNT(*) FROM experiment_runs")
+            return int(cur.fetchone()[0])
 
     def get_runs_by_experiment(self, experiment_id: str) -> list[ExperimentRun]:
         """Fetches all trials executed under a specific experiment_id."""
@@ -219,9 +256,11 @@ class ExperimentRepository:
         cfg_dict = json.loads(row["config_json"])
         cfg = ExperimentConfig.from_dict(cfg_dict)
         metrics_dict = json.loads(row["metrics_json"])
+        group = row["group_name"] if "group_name" in row.keys() and row["group_name"] else ""
         return ExperimentRun(
             experiment_id=row["experiment_id"],
             run_id=row["run_id"],
+            group_name=group,
             split=row["split"],
             status=row["status"],
             git_commit=row["git_commit"],

@@ -1,0 +1,17 @@
+group: "E"
+name: "Database Connection Pool Limits"
+description: "Varies db_pool_size from severe pool starvation up to saturation under constant 400 RPS load with 4 checkout replicas."
+defaults:
+  checkout_replicas: 4
+  cpu_limit: "500m"
+  cache_enabled: false
+  consumers: 2
+  seed: 42
+  split: "train"
+workload:
+  profile: "normal"
+  rps: 400
+  duration: 15
+  warmup_duration: 2
+matrix:
+  db_pool_size: [5, 10, 20, 30, 50, 75, 100, 150]

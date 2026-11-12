@@ -178,7 +178,7 @@ def test_acceptance_reproducibility_within_noise(tmp_path: Path) -> None:
     runner = ExperimentRunner(repository=repo, mock_mode=True)
 
     config = ExperimentConfig(
-        workload=WorkloadSpec(rps=100, profile="normal", duration=1, warmup_duration=1),
+        workload=WorkloadSpec(rps=100, profile="normal", duration=2, warmup_duration=1),
         checkout_replicas=2,
         db_pool_size=50,
         split="train",

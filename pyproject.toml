@@ -45,6 +45,9 @@ dependencies = [
     "pyarrow>=15.0.0",
 ]
 
+[project.scripts]
+scopex = "scopex.cli:main"
+
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0.0",

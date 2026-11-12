@@ -1,0 +1,17 @@
+group: "F"
+name: "Catalog Caching Impact"
+description: "Toggles Redis product caching across normal and viral product traffic at varying RPS to measure cache hit benefits and DB offloading."
+defaults:
+  checkout_replicas: 2
+  db_pool_size: 50
+  cpu_limit: "500m"
+  consumers: 2
+  seed: 42
+  split: "train"
+workload:
+  duration: 15
+  warmup_duration: 2
+matrix:
+  cache_enabled: [false, true]
+  profile: ["normal", "viral_product"]
+  rps: [100, 250, 500]
