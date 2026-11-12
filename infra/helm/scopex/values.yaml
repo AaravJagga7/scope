@@ -72,7 +72,7 @@ inventory:
   image: scopex-inventory:latest
   replicas: 2
   port: 8003
-  db_pool_size: 10
+  db_pool_size: 50
   db_max_overflow: 5
   resources:
     requests:
@@ -99,7 +99,7 @@ order:
   replicas: 2
   port: 8005
   consumer_count: 1
-  db_pool_size: 10
+  db_pool_size: 50
   db_max_overflow: 5
   processing_delay_ms: 50
   resources:
@@ -111,7 +111,7 @@ order:
       memory: 512Mi
 checkout:
   image: scopex-checkout:latest
-  replicas: 2
+  replicas: 8
   port: 8006
   resources:
     requests:

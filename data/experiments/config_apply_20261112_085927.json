@@ -1,0 +1,22 @@
+{
+  "timestamp": "2026-11-12T08:59:27.739604+00:00",
+  "config_file": "/Users/aarav/scope-x/data/experiments/temp_config_r8.json",
+  "seed": 42,
+  "applied_changes": {
+    "checkout": {
+      "replicas": 8
+    }
+  },
+  "target_config": {
+    "checkout": {
+      "replicas": 8
+    },
+    "order": {
+      "db_pool_size": 50
+    },
+    "inventory": {
+      "db_pool_size": 50
+    }
+  },
+  "status": "COMPLETED"
+}
