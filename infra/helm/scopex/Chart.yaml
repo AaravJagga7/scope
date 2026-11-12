@@ -1,0 +1,14 @@
+apiVersion: v2
+name: scopex
+description: SCOPE-X Microservice Testbed Helm Chart for Kubernetes (kind/minikube)
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - e-commerce
+  - microservices
+  - research
+  - constraints
+  - kubernetes
+maintainers:
+  - name: SCOPE-X Research Team

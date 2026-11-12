@@ -1,0 +1,16 @@
+{
+  "timestamp": "2026-11-12T07:52:43.244579+00:00",
+  "config_file": "/private/var/folders/1n/qt0dq89n33l06k5hnzyy1s_40000gn/T/pytest-of-aarav/pytest-0/test_apply_config_checkout_sca0/scale_checkout.json",
+  "seed": 123,
+  "applied_changes": {
+    "checkout": {
+      "replicas": 4
+    }
+  },
+  "target_config": {
+    "checkout": {
+      "replicas": 4
+    }
+  },
+  "status": "COMPLETED"
+}

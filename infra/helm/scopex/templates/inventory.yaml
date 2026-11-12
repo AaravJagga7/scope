@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: inventory
+    app.kubernetes.io/component: microservice
+    app.kubernetes.io/part-of: scopex
+spec:
+  replicas: {{ .Values.inventory.replicas }}
+  selector:
+    matchLabels:
+      app: inventory
+  template:
+    metadata:
+      labels:
+        app: inventory
+        app.kubernetes.io/component: microservice
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ .Values.inventory.port | quote }}
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: inventory
+          image: {{ .Values.inventory.image }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          command: ["uvicorn", "services.inventory.main:app", "--host", "0.0.0.0", "--port", "{{ .Values.inventory.port }}"]
+          ports:
+            - containerPort: {{ .Values.inventory.port }}
+              name: http
+          env:
+            - name: PORT
+              value: {{ .Values.inventory.port | quote }}
+            - name: DATABASE_URL
+              value: "postgresql://postgres:postgres@postgres:5432/scopex"
+            - name: DB_POOL_SIZE
+              value: {{ .Values.inventory.db_pool_size | quote }}
+            - name: DB_MAX_OVERFLOW
+              value: {{ .Values.inventory.db_max_overflow | quote }}
+            - name: LOG_LEVEL
+              value: {{ .Values.global.logLevel | quote }}
+          resources:
+            {{- toYaml .Values.inventory.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.inventory.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.inventory.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: inventory
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.inventory.port }}
+      targetPort: {{ .Values.inventory.port }}
+      name: http
+  selector:
+    app: inventory

@@ -1,0 +1,55 @@
+{
+  "seed": 42,
+  "description": "Example parameterised configuration for SCOPE-X experiment run",
+  "services": {
+    "checkout": {
+      "replicas": 4,
+      "cpu_request": "100m",
+      "cpu_limit": "500m",
+      "memory_request": "128Mi",
+      "memory_limit": "512Mi"
+    },
+    "order": {
+      "replicas": 2,
+      "consumer_count": 2,
+      "db_pool_size": 10,
+      "processing_delay_ms": 50,
+      "cpu_request": "100m",
+      "cpu_limit": "500m",
+      "memory_request": "128Mi",
+      "memory_limit": "512Mi"
+    },
+    "inventory": {
+      "replicas": 2,
+      "db_pool_size": 10,
+      "cpu_request": "100m",
+      "cpu_limit": "500m",
+      "memory_request": "128Mi",
+      "memory_limit": "512Mi"
+    },
+    "product": {
+      "replicas": 2,
+      "cache_enabled": true,
+      "cpu_request": "100m",
+      "cpu_limit": "500m",
+      "memory_request": "128Mi",
+      "memory_limit": "512Mi"
+    },
+    "cart": {
+      "replicas": 2,
+      "cpu_request": "100m",
+      "cpu_limit": "500m",
+      "memory_request": "128Mi",
+      "memory_limit": "512Mi"
+    },
+    "payment": {
+      "replicas": 2,
+      "latency_ms": 50,
+      "failure_rate": 0.0,
+      "cpu_request": "100m",
+      "cpu_limit": "500m",
+      "memory_request": "128Mi",
+      "memory_limit": "512Mi"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: scopex
+  labels:
+    name: scopex
+    app.kubernetes.io/part-of: scopex

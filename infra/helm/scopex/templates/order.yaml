@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: order
+    app.kubernetes.io/component: microservice
+    app.kubernetes.io/part-of: scopex
+spec:
+  replicas: {{ .Values.order.replicas }}
+  selector:
+    matchLabels:
+      app: order
+  template:
+    metadata:
+      labels:
+        app: order
+        app.kubernetes.io/component: microservice
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ .Values.order.port | quote }}
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: order
+          image: {{ .Values.order.image }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          command: ["uvicorn", "services.order.main:app", "--host", "0.0.0.0", "--port", "{{ .Values.order.port }}"]
+          ports:
+            - containerPort: {{ .Values.order.port }}
+              name: http
+          env:
+            - name: PORT
+              value: {{ .Values.order.port | quote }}
+            - name: DATABASE_URL
+              value: "postgresql://postgres:postgres@postgres:5432/scopex"
+            - name: RABBITMQ_URL
+              value: "amqp://guest:guest@rabbitmq:5672/"
+            - name: ORDER_CONSUMER_CONCURRENCY
+              value: {{ .Values.order.consumer_count | quote }}
+            - name: ORDER_PROCESSING_DELAY_MS
+              value: {{ .Values.order.processing_delay_ms | quote }}
+            - name: DB_POOL_SIZE
+              value: {{ .Values.order.db_pool_size | quote }}
+            - name: DB_MAX_OVERFLOW
+              value: {{ .Values.order.db_max_overflow | quote }}
+            - name: LOG_LEVEL
+              value: {{ .Values.global.logLevel | quote }}
+          resources:
+            {{- toYaml .Values.order.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.order.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.order.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: order
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.order.port }}
+      targetPort: {{ .Values.order.port }}
+      name: http
+  selector:
+    app: order

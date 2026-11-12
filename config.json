@@ -1,0 +1,20 @@
+{
+  "checkout": {
+    "replicas": 4,
+    "cpu_limit": "500m",
+    "memory_limit": "512Mi"
+  },
+  "order": {
+    "replicas": 2,
+    "consumer_count": 2,
+    "db_pool_size": 10
+  },
+  "inventory": {
+    "replicas": 2,
+    "db_pool_size": 10
+  },
+  "product": {
+    "replicas": 2,
+    "cache_enabled": true
+  }
+}
