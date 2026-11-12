@@ -1,0 +1,188 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --bg-main: #F4F5F9;
+  --bg-card: #FFFFFF;
+  --border-subtle: #ECEEF3;
+  --text-main: #111111;
+  --text-muted: #8C8E9B;
+  --text-secondary: #4B4F59;
+  --accent-black: #111111;
+  --accent-blue: #1B65F1;
+  --accent-green: #108A00;
+  --accent-red: #D92D20;
+  --accent-orange: #D97706;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-main);
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code, pre {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #D8DBE5;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #B0B4C3;
+}
+
+/* Base Card Style */
+.jobgio-card {
+  background: var(--bg-card);
+  border-radius: 20px;
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.025);
+  padding: 24px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.jobgio-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+}
+
+/* Quick Stat Pill */
+.stat-pill {
+  background: #FFFFFF;
+  border: 1px solid #EAECEF;
+  border-radius: 22px;
+  padding: 16px 12px;
+  text-align: center;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 135px;
+  transition: all 0.15s ease;
+  cursor: default;
+}
+
+.stat-pill:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+}
+
+.stat-icon-wrapper {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #F4F5F8;
+  color: #4A4D58;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  margin-bottom: 10px;
+}
+
+.stat-icon-wrapper.highlighted {
+  background: #111111 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+
+.stat-val {
+  font-size: 24px;
+  font-weight: 800;
+  color: #111111;
+  letter-spacing: -0.6px;
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+
+.stat-lbl {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: capitalize;
+}
+
+/* Badges */
+.pill-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.badge-active { background: #E9F8EE; color: #108A00; }
+.badge-pending { background: #F1F2F6; color: #4B4F59; }
+.badge-safe { background: #EBF3FF; color: #1B65F1; }
+.badge-warning { background: #FFF4E5; color: #D97706; }
+.badge-danger { background: #FEECEB; color: #D92D20; }
+.badge-dark { background: #111111; color: #FFFFFF; }
+
+/* Table Styles */
+.clean-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+  color: #1A1D24;
+}
+
+.clean-table th {
+  background: #FAFAFC;
+  color: #717684;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: capitalize;
+  padding: 12px 16px;
+  border-bottom: 1px solid #ECEEF3;
+  letter-spacing: 0.3px;
+  text-align: left;
+}
+
+.clean-table th:first-child { border-top-left-radius: 12px; }
+.clean-table th:last-child { border-top-right-radius: 12px; }
+
+.clean-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #F2F3F7;
+  background: #FFFFFF;
+}
+
+.clean-table tr:hover td {
+  background-color: #FBFBFE;
+}
+
+.clean-table tr:last-child td:first-child { border-bottom-left-radius: 12px; }
+.clean-table tr:last-child td:last-child { border-bottom-right-radius: 12px; }
+
+/* Approval List Item */
+.approval-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid #F2F3F7;
+}
+
+.approval-row:last-child {
+  border-bottom: none;
+}
