@@ -1,0 +1,116 @@
+{
+  "source_replicas": 2,
+  "target_replicas": 4,
+  "scale_factor": 2.0,
+  "source_constraints_count": 6,
+  "evolved_constraints": [
+    {
+      "status": "unchanged",
+      "original_rule": "IF cache_enabled <= 0.50 and target_rps > 487.50 THEN SLO_VIOLATION",
+      "evolved_rule": "IF cache_enabled <= 0.50 and target_rps > 487.50 THEN SLO_VIOLATION",
+      "rationale": "Cache invariant holds across scales; at 4 replicas, bypassing cache under high load directly saturates database and queues.",
+      "z3_expr": "And(cache_enabled <= 0.50, target_rps > 487.50)",
+      "heldout_precision": 1.0,
+      "heldout_recall": 0.5,
+      "heldout_f1": 0.5
+    },
+    {
+      "status": "relaxed",
+      "original_rule": "IF target_rps > 350.00 THEN SLO_VIOLATION",
+      "evolved_rule": "IF target_rps > 700.00 THEN SLO_VIOLATION",
+      "rationale": "Frontend CPU capacity doubled from 350 RPS (2 replicas) to 700 RPS (4 replicas).",
+      "z3_expr": "target_rps > 700.00",
+      "heldout_precision": 1.0,
+      "heldout_recall": 0.6667,
+      "heldout_f1": 0.6667
+    },
+    {
+      "status": "tightened",
+      "original_rule": "IF db_pool_size <= 15.00 THEN SLO_VIOLATION",
+      "evolved_rule": "IF db_pool_size <= 25.00 and target_rps > 400.00 THEN SLO_VIOLATION",
+      "rationale": "At 4 replicas, higher concurrency drains connection pools faster; minimum safe pool size tightened from 15 to 25.",
+      "z3_expr": "And(db_pool_size <= 25.00, target_rps > 400.00)",
+      "heldout_precision": 1.0,
+      "heldout_recall": 0.2857,
+      "heldout_f1": 0.2857
+    },
+    {
+      "status": "invalidated",
+      "original_rule": "IF checkout_replicas <= 2 and target_rps > 140.00 THEN SLO_VIOLATION",
+      "evolved_rule": "[SUPERSEDED / INVALIDATED]",
+      "rationale": "Condition 'checkout_replicas <= 2' is permanently false in 4-replica environment.",
+      "z3_expr": "False",
+      "heldout_precision": 0.0,
+      "heldout_recall": 0.0,
+      "heldout_f1": 0.0
+    },
+    {
+      "status": "new",
+      "original_rule": null,
+      "evolved_rule": "IF target_rps > 450.00 and cache_enabled <= 0.50 THEN SLO_VIOLATION",
+      "rationale": "Newly emerged multi-tier bottleneck: uncached traffic exceeding 450 RPS causes cascading order queue backlog.",
+      "z3_expr": "And(target_rps > 450.00, cache_enabled <= 0.50)",
+      "heldout_precision": 1.0,
+      "heldout_recall": 0.5,
+      "heldout_f1": 0.5
+    }
+  ],
+  "comparison_table": [
+    {
+      "experiments": 2,
+      "incremental_accuracy": 0.72,
+      "incremental_f1": 0.72,
+      "full_rediscovery_accuracy": 0.75,
+      "full_rediscovery_f1": 0.7368,
+      "accuracy_delta": -0.03
+    },
+    {
+      "experiments": 4,
+      "incremental_accuracy": 0.8,
+      "incremental_f1": 0.8,
+      "full_rediscovery_accuracy": 0.75,
+      "full_rediscovery_f1": 0.7368,
+      "accuracy_delta": 0.05
+    },
+    {
+      "experiments": 6,
+      "incremental_accuracy": 0.8,
+      "incremental_f1": 0.8,
+      "full_rediscovery_accuracy": 0.57,
+      "full_rediscovery_f1": 0.532,
+      "accuracy_delta": 0.23
+    },
+    {
+      "experiments": 8,
+      "incremental_accuracy": 0.8,
+      "incremental_f1": 0.8,
+      "full_rediscovery_accuracy": 0.75,
+      "full_rediscovery_f1": 0.7368,
+      "accuracy_delta": 0.05
+    },
+    {
+      "experiments": 12,
+      "incremental_accuracy": 0.8,
+      "incremental_f1": 0.8,
+      "full_rediscovery_accuracy": 0.75,
+      "full_rediscovery_f1": 0.7368,
+      "accuracy_delta": 0.05
+    },
+    {
+      "experiments": 16,
+      "incremental_accuracy": 0.8,
+      "incremental_f1": 0.8,
+      "full_rediscovery_accuracy": 0.77,
+      "full_rediscovery_f1": 0.752,
+      "accuracy_delta": 0.03
+    },
+    {
+      "experiments": 20,
+      "incremental_accuracy": 0.8,
+      "incremental_f1": 0.8,
+      "full_rediscovery_accuracy": 0.85,
+      "full_rediscovery_f1": 0.84,
+      "accuracy_delta": -0.05
+    }
+  ]
+}

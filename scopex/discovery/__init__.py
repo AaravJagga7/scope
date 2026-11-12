@@ -1,4 +1,4 @@
-"""Discovery module: GP surrogate, active learning, constraint discovery, and formal verification."""
+"""Discovery module: GP surrogate, active learning, constraint discovery, verification, and evolution."""
 
 from scopex.discovery.acquisition import (
     SLOBoundaryAcquisition,
@@ -17,6 +17,15 @@ from scopex.discovery.evaluation import (
     plot_active_learning_efficiency,
     plot_predicted_vs_actual,
     plot_uncertainty_vs_traffic,
+)
+from scopex.discovery.evolution import (
+    ComparisonRow,
+    ConstraintStatus,
+    CrossScaleEvolutionEngine,
+    CrossScaleEvolutionResult,
+    EvolvedConstraint,
+    format_evolution_report,
+    select_verification_experiments_gp,
 )
 from scopex.discovery.selection import (
     ActiveLearningBenchmark,
@@ -66,4 +75,11 @@ __all__ = [
     "IterationRecord",
     "VerificationSummary",
     "VerificationLoop",
+    "ConstraintStatus",
+    "EvolvedConstraint",
+    "ComparisonRow",
+    "CrossScaleEvolutionResult",
+    "CrossScaleEvolutionEngine",
+    "select_verification_experiments_gp",
+    "format_evolution_report",
 ]
