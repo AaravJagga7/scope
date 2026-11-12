@@ -24,3 +24,4 @@ cd "${REPO_ROOT}"
     --theme.secondaryBackgroundColor "#F5F0E8" \
     --theme.textColor "#111111" \
     --theme.font "monospace"
+
