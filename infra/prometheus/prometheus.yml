@@ -1,0 +1,46 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: "scopex-product"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["product:8001", "host.docker.internal:8001"]
+        labels:
+          service: "product-service"
+
+  - job_name: "scopex-cart"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["cart:8002", "host.docker.internal:8002"]
+        labels:
+          service: "cart-service"
+
+  - job_name: "scopex-inventory"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["inventory:8003", "host.docker.internal:8003"]
+        labels:
+          service: "inventory-service"
+
+  - job_name: "scopex-payment"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["payment:8004", "host.docker.internal:8004"]
+        labels:
+          service: "payment-service"
+
+  - job_name: "scopex-order"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["order:8005", "host.docker.internal:8005"]
+        labels:
+          service: "order-service"
+
+  - job_name: "scopex-checkout"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["checkout:8006", "host.docker.internal:8006"]
+        labels:
+          service: "checkout-service"

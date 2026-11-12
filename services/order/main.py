@@ -7,17 +7,19 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from pydantic import BaseModel, Field
 from sqlalchemy import Column, DateTime, Float, String, Text
 from sqlalchemy.orm import Session
 
 from services.common.database import Base, create_db_engine, get_db_pool_size, get_session_factory
 from services.common.logging import setup_logger
-from services.common.metrics import PrometheusMiddleware, metrics_endpoint
+from services.common.metrics import PrometheusMiddleware, instrument_db_pool, metrics_endpoint
+from services.common.tracing import setup_tracer, trace_router, trace_span
 
 SERVICE_NAME = "order-service"
 logger = setup_logger(SERVICE_NAME, level=os.getenv("LOG_LEVEL", "INFO"))
+tracer = setup_tracer(SERVICE_NAME)
 
 
 # SQLAlchemy ORM Model
@@ -78,6 +80,7 @@ def init_db() -> None:
 
 # Ensure tables exist immediately if database is reachable
 init_db()
+instrument_db_pool(engine, SERVICE_NAME, pool_size=db_pool_size)
 
 
 def get_db_session() -> AsyncGenerator[Session, None]:
@@ -98,6 +101,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 app = FastAPI(title="Order Service", lifespan=lifespan)
 app.add_middleware(PrometheusMiddleware, service_name=SERVICE_NAME)
+app.include_router(trace_router)
 
 
 @app.get("/health")
@@ -112,39 +116,42 @@ def metrics() -> None:
 
 @app.post("/orders", response_model=OrderResponse, status_code=status.HTTP_201_CREATED)
 def create_order(
-    request: CreateOrderRequest, db: Session = Depends(get_db_session)
+    request: CreateOrderRequest,
+    raw_req: Request,
+    db: Session = Depends(get_db_session),
 ) -> OrderResponse:
-    order_id = f"ord_{uuid.uuid4().hex[:12]}"
-    now = datetime.now(UTC)
-    items_dump = json.dumps([item.model_dump() for item in request.items])
+    with trace_span(tracer, "order.create", carrier=dict(raw_req.headers)):
+        order_id = f"ord_{uuid.uuid4().hex[:12]}"
+        now = datetime.now(UTC)
+        items_dump = json.dumps([item.model_dump() for item in request.items])
 
-    order = OrderRecord(
-        id=order_id,
-        cart_id=request.cart_id,
-        user_id=request.user_id,
-        total_amount=request.total_amount,
-        currency=request.currency,
-        status="CONFIRMED",
-        items_json=items_dump,
-        created_at=now,
-    )
-    db.add(order)
-    db.commit()
-    db.refresh(order)
+        order = OrderRecord(
+            id=order_id,
+            cart_id=request.cart_id,
+            user_id=request.user_id,
+            total_amount=request.total_amount,
+            currency=request.currency,
+            status="CONFIRMED",
+            items_json=items_dump,
+            created_at=now,
+        )
+        db.add(order)
+        db.commit()
+        db.refresh(order)
 
-    logger.info(
-        "Order created: %s for user %s ($%.2f)", order_id, request.user_id, request.total_amount
-    )
-    return OrderResponse(
-        order_id=order.id,
-        cart_id=order.cart_id,
-        user_id=order.user_id,
-        total_amount=order.total_amount,
-        currency=order.currency,
-        status=order.status,
-        created_at=order.created_at.isoformat(),
-        items=request.items,
-    )
+        logger.info(
+            "Order created: %s for user %s ($%.2f)", order_id, request.user_id, request.total_amount
+        )
+        return OrderResponse(
+            order_id=order.id,
+            cart_id=order.cart_id,
+            user_id=order.user_id,
+            total_amount=order.total_amount,
+            currency=order.currency,
+            status=order.status,
+            created_at=order.created_at.isoformat(),
+            items=request.items,
+        )
 
 
 @app.get("/orders/{order_id}", response_model=OrderResponse)

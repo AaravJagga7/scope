@@ -4,17 +4,19 @@ import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from pydantic import BaseModel, Field
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import Session
 
 from services.common.database import Base, create_db_engine, get_db_pool_size, get_session_factory
 from services.common.logging import setup_logger
-from services.common.metrics import PrometheusMiddleware, metrics_endpoint
+from services.common.metrics import PrometheusMiddleware, instrument_db_pool, metrics_endpoint
+from services.common.tracing import setup_tracer, trace_router, trace_span
 
 SERVICE_NAME = "inventory-service"
 logger = setup_logger(SERVICE_NAME, level=os.getenv("LOG_LEVEL", "INFO"))
+tracer = setup_tracer(SERVICE_NAME)
 
 
 # SQLAlchemy ORM Model
@@ -80,6 +82,7 @@ def init_db() -> None:
 
 # Ensure tables exist immediately if database is reachable
 init_db()
+instrument_db_pool(engine, SERVICE_NAME, pool_size=db_pool_size)
 
 
 def get_db_session() -> AsyncGenerator[Session, None]:
@@ -100,6 +103,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 app = FastAPI(title="Inventory Service", lifespan=lifespan)
 app.add_middleware(PrometheusMiddleware, service_name=SERVICE_NAME)
+app.include_router(trace_router)
 
 
 @app.get("/health")
@@ -129,58 +133,64 @@ def get_inventory(product_id: str, db: Session = Depends(get_db_session)) -> Sto
 
 @app.post("/inventory/reserve", response_model=ReservationResponse)
 def reserve_inventory(
-    request: ReservationRequest, db: Session = Depends(get_db_session)
+    request: ReservationRequest,
+    raw_req: Request,
+    db: Session = Depends(get_db_session),
 ) -> ReservationResponse:
     """Reserve inventory for checkout; rolls back if insufficient stock for any item."""
-    for item in request.items:
-        record = (
-            db.query(InventoryRecord)
-            .filter_by(product_id=item.product_id)
-            .with_for_update()
-            .first()
-        )
-        if not record or record.available_qty < item.quantity:
-            available = record.available_qty if record else 0
-            logger.warning(
-                "Insufficient inventory for %s: requested %d, available %d",
-                item.product_id,
-                item.quantity,
-                available,
+    with trace_span(tracer, "inventory.reserve", carrier=dict(raw_req.headers)):
+        for item in request.items:
+            record = (
+                db.query(InventoryRecord)
+                .filter_by(product_id=item.product_id)
+                .with_for_update()
+                .first()
             )
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"Insufficient inventory for product {item.product_id}",
-            )
+            if not record or record.available_qty < item.quantity:
+                available = record.available_qty if record else 0
+                logger.warning(
+                    "Insufficient inventory for %s: requested %d, available %d",
+                    item.product_id,
+                    item.quantity,
+                    available,
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"Insufficient inventory for product {item.product_id}",
+                )
 
-    # Perform reservations
-    for item in request.items:
-        record = db.query(InventoryRecord).filter_by(product_id=item.product_id).first()
-        if record:
-            record.available_qty -= item.quantity
-            record.reserved_qty += item.quantity
+        # Perform reservations
+        for item in request.items:
+            record = db.query(InventoryRecord).filter_by(product_id=item.product_id).first()
+            if record:
+                record.available_qty -= item.quantity
+                record.reserved_qty += item.quantity
 
-    db.commit()
-    logger.info("Reserved %d inventory line items", len(request.items))
-    return ReservationResponse(success=True, reserved_items=request.items)
+        db.commit()
+        logger.info("Reserved %d inventory line items", len(request.items))
+        return ReservationResponse(success=True, reserved_items=request.items)
 
 
 @app.post("/inventory/deduct", response_model=ReservationResponse)
 def deduct_inventory(
-    request: ReservationRequest, db: Session = Depends(get_db_session)
+    request: ReservationRequest,
+    raw_req: Request,
+    db: Session = Depends(get_db_session),
 ) -> ReservationResponse:
     """Commit reservation by deducting from reserved quantities."""
-    for item in request.items:
-        record = (
-            db.query(InventoryRecord)
-            .filter_by(product_id=item.product_id)
-            .with_for_update()
-            .first()
-        )
-        if record:
-            record.reserved_qty = max(0, record.reserved_qty - item.quantity)
-    db.commit()
-    logger.info("Deducted %d inventory line items", len(request.items))
-    return ReservationResponse(success=True, reserved_items=request.items)
+    with trace_span(tracer, "inventory.deduct", carrier=dict(raw_req.headers)):
+        for item in request.items:
+            record = (
+                db.query(InventoryRecord)
+                .filter_by(product_id=item.product_id)
+                .with_for_update()
+                .first()
+            )
+            if record:
+                record.reserved_qty = max(0, record.reserved_qty - item.quantity)
+        db.commit()
+        logger.info("Deducted %d inventory line items", len(request.items))
+        return ReservationResponse(success=True, reserved_items=request.items)
 
 
 if __name__ == "__main__":

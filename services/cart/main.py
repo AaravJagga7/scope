@@ -4,14 +4,16 @@ import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, Request, status
 from pydantic import BaseModel, Field
 
 from services.common.logging import setup_logger
 from services.common.metrics import PrometheusMiddleware, metrics_endpoint
+from services.common.tracing import setup_tracer, trace_router, trace_span
 
 SERVICE_NAME = "cart-service"
 logger = setup_logger(SERVICE_NAME, level=os.getenv("LOG_LEVEL", "INFO"))
+tracer = setup_tracer(SERVICE_NAME)
 
 
 class CartItem(BaseModel):
@@ -47,6 +49,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 app = FastAPI(title="Cart Service", lifespan=lifespan)
 app.add_middleware(PrometheusMiddleware, service_name=SERVICE_NAME)
+app.include_router(trace_router)
 
 
 @app.get("/health")
@@ -94,31 +97,33 @@ def add_item(cart_id: str, request: AddItemRequest) -> Cart:
 
 
 @app.delete("/cart/{cart_id}", status_code=status.HTTP_200_OK)
-def clear_cart(cart_id: str) -> dict[str, str]:
-    if cart_id in CARTS:
-        CARTS.pop(cart_id, None)
-    logger.info("Cleared cart %s", cart_id)
-    return {"status": "cleared", "cart_id": cart_id}
+def clear_cart(cart_id: str, raw_req: Request) -> dict[str, str]:
+    with trace_span(tracer, "cart.clear", carrier=dict(raw_req.headers)):
+        if cart_id in CARTS:
+            CARTS.pop(cart_id, None)
+        logger.info("Cleared cart %s", cart_id)
+        return {"status": "cleared", "cart_id": cart_id}
 
 
 @app.post("/cart/{cart_id}/validate", response_model=Cart)
-def validate_cart(cart_id: str) -> Cart:
-    items_map = CARTS.get(cart_id, {})
-    if not items_map:
-        logger.warning("Cart validation failed: cart %s is empty", cart_id)
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Cart {cart_id} is empty or does not exist",
-        )
+def validate_cart(cart_id: str, raw_req: Request) -> Cart:
+    with trace_span(tracer, "cart.validate", carrier=dict(raw_req.headers)):
+        items_map = CARTS.get(cart_id, {})
+        if not items_map:
+            logger.warning("Cart validation failed: cart %s is empty", cart_id)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Cart {cart_id} is empty or does not exist",
+            )
 
-    cart = get_cart(cart_id)
-    logger.info(
-        "Cart %s successfully validated (%d items, total $%.2f)",
-        cart_id,
-        len(cart.items),
-        cart.total_amount,
-    )
-    return cart
+        cart = get_cart(cart_id)
+        logger.info(
+            "Cart %s successfully validated (%d items, total $%.2f)",
+            cart_id,
+            len(cart.items),
+            cart.total_amount,
+        )
+        return cart
 
 
 if __name__ == "__main__":

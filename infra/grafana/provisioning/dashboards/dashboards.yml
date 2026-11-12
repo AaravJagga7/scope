@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: "SCOPE-X Dashboards"
+    orgId: 1
+    folder: "SCOPE-X"
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/json

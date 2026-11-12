@@ -7,14 +7,16 @@ import uuid
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, Request, status
 from pydantic import BaseModel, Field
 
 from services.common.logging import setup_logger
 from services.common.metrics import PrometheusMiddleware, metrics_endpoint
+from services.common.tracing import setup_tracer, trace_router, trace_span
 
 SERVICE_NAME = "payment-service"
 logger = setup_logger(SERVICE_NAME, level=os.getenv("LOG_LEVEL", "INFO"))
+tracer = setup_tracer(SERVICE_NAME)
 
 
 class PaymentRequest(BaseModel):
@@ -52,6 +54,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 app = FastAPI(title="Payment Service", lifespan=lifespan)
 app.add_middleware(PrometheusMiddleware, service_name=SERVICE_NAME)
+app.include_router(trace_router)
 
 
 @app.get("/health")
@@ -70,34 +73,35 @@ def metrics() -> None:
 
 
 @app.post("/payment/process", response_model=PaymentResponse)
-async def process_payment(request: PaymentRequest) -> PaymentResponse:
-    latency_ms = get_latency_ms()
-    failure_rate = get_failure_rate()
+async def process_payment(request: PaymentRequest, raw_req: Request) -> PaymentResponse:
+    with trace_span(tracer, "payment.process", carrier=dict(raw_req.headers)):
+        latency_ms = get_latency_ms()
+        failure_rate = get_failure_rate()
 
-    # Simulate network / gateway latency
-    if latency_ms > 0:
-        await asyncio.sleep(latency_ms / 1000.0)
+        # Simulate network / gateway latency
+        if latency_ms > 0:
+            await asyncio.sleep(latency_ms / 1000.0)
 
-    # Simulate payment failure
-    if random.random() < failure_rate:
-        logger.warning(
-            "Simulated payment failure for cart %s, amount %.2f",
-            request.cart_id,
-            request.amount,
+        # Simulate payment failure
+        if random.random() < failure_rate:
+            logger.warning(
+                "Simulated payment failure for cart %s, amount %.2f",
+                request.cart_id,
+                request.amount,
+            )
+            raise HTTPException(
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                detail="Payment transaction declined by mock gateway",
+            )
+
+        txn_id = f"txn_{uuid.uuid4().hex[:12]}"
+        logger.info("Payment approved: txn %s for $%.2f", txn_id, request.amount)
+        return PaymentResponse(
+            transaction_id=txn_id,
+            status="succeeded",
+            amount=request.amount,
+            currency=request.currency,
         )
-        raise HTTPException(
-            status_code=status.HTTP_402_PAYMENT_REQUIRED,
-            detail="Payment transaction declined by mock gateway",
-        )
-
-    txn_id = f"txn_{uuid.uuid4().hex[:12]}"
-    logger.info("Payment approved: txn %s for $%.2f", txn_id, request.amount)
-    return PaymentResponse(
-        transaction_id=txn_id,
-        status="succeeded",
-        amount=request.amount,
-        currency=request.currency,
-    )
 
 
 if __name__ == "__main__":
