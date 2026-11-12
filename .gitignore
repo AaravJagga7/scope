@@ -49,6 +49,7 @@ htmlcov/
 # Experiment data & raw artifacts (keep data structure tracked via .gitkeep)
 data/raw/*
 data/processed/*
+*.parquet
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 experiments/runs/*
