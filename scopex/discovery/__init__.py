@@ -1,8 +1,16 @@
-"""Discovery module: GP surrogate and active learning for constraint discovery."""
+"""Discovery module: GP surrogate, active learning, and interpretable constraint discovery."""
 
 from scopex.discovery.acquisition import (
     SLOBoundaryAcquisition,
     select_next_candidate_bo,
+)
+from scopex.discovery.constraints import (
+    Constraint,
+    evaluate_and_rank_constraints,
+    format_constraints_report,
+    learn_constraints,
+    learn_decision_tree_constraints,
+    learn_sparse_regression_constraints,
 )
 from scopex.discovery.evaluation import (
     compute_metrics,
@@ -40,4 +48,10 @@ __all__ = [
     "StepRecord",
     "StrategyResult",
     "StrategyType",
+    "Constraint",
+    "learn_constraints",
+    "learn_decision_tree_constraints",
+    "learn_sparse_regression_constraints",
+    "evaluate_and_rank_constraints",
+    "format_constraints_report",
 ]
