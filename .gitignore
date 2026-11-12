@@ -67,3 +67,7 @@ experiments/runs/*
 .env.*
 !.env.example
 
+
+dashboard/frontend/node_modules/
+dashboard/frontend/dist/
+
