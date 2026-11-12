@@ -44,3 +44,4 @@ scrape_configs:
       - targets: ["checkout:8006", "host.docker.internal:8006"]
         labels:
           service: "checkout-service"
+

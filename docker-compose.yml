@@ -31,6 +31,23 @@ services:
       timeout: 5s
       retries: 5
 
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: scopex-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   prometheus:
     image: prom/prometheus:v2.51.0
     container_name: scopex-prometheus
@@ -131,6 +148,9 @@ services:
     environment:
       PORT: "8005"
       DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/scopex"
+      RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672/"
+      ORDER_CONSUMER_CONCURRENCY: "1"
+      ORDER_PROCESSING_DELAY_MS: "50"
       DB_POOL_SIZE: "10"
       DB_MAX_OVERFLOW: "5"
       LOG_LEVEL: "INFO"
@@ -138,6 +158,8 @@ services:
       - "8005:8005"
     depends_on:
       postgres:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
   checkout:
@@ -164,5 +186,6 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  rabbitmq_data:
   prometheus_data:
   grafana_data:

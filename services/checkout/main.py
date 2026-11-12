@@ -241,7 +241,10 @@ async def process_checkout(request: CheckoutRequest) -> CheckoutResponse:
                     json=order_payload,
                     headers=trace_headers,
                 )
-                if order_resp.status_code != status.HTTP_201_CREATED:
+                if order_resp.status_code not in (
+                    status.HTTP_201_CREATED,
+                    status.HTTP_202_ACCEPTED,
+                ):
                     logger.error("[%s] Order creation failed: %s", checkout_id, order_resp.text)
                     raise HTTPException(
                         status_code=order_resp.status_code,

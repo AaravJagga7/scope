@@ -22,3 +22,4 @@ RUN pip install --no-cache-dir --upgrade pip && \
 EXPOSE 8001 8002 8003 8004 8005 8006
 
 CMD ["uvicorn", "services.product.main:app", "--host", "0.0.0.0", "--port", "8001"]
+

@@ -3,6 +3,7 @@
 from services.common.cache import CacheClient
 from services.common.database import Base, create_db_engine, get_database_url, get_db_pool_size
 from services.common.logging import setup_logger
+from services.common.messaging import BROKER, QUEUE_NAME, MessageBroker
 from services.common.metrics import (
     DB_POOL_CONNECTIONS,
     HTTP_REQUEST_DURATION_SECONDS,
@@ -25,6 +26,7 @@ from services.common.tracing import (
 )
 
 __all__ = [
+    "BROKER",
     "Base",
     "CacheClient",
     "DB_POOL_CONNECTIONS",
@@ -33,7 +35,9 @@ __all__ = [
     "HTTP_REQUESTS_IN_FLIGHT",
     "HTTP_REQUESTS_TOTAL",
     "HTTP_REQUEST_DURATION_SECONDS",
+    "MessageBroker",
     "PrometheusMiddleware",
+    "QUEUE_NAME",
     "SERVICE_QUEUE_LENGTH",
     "create_db_engine",
     "extract_carrier",

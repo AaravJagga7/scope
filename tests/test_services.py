@@ -151,8 +151,8 @@ def test_payment_processing(payment_client: TestClient) -> None:
     assert data["transaction_id"].startswith("txn_")
 
 
-# 6. Order Service Tests
-def test_order_creation_and_retrieval(order_client: TestClient) -> None:
+# 6. Order Service Tests (async queue — returns PENDING immediately)
+def test_order_creation_returns_pending(order_client: TestClient) -> None:
     order_payload = {
         "cart_id": "cart_order_test",
         "user_id": "user_42",
@@ -163,10 +163,5 @@ def test_order_creation_and_retrieval(order_client: TestClient) -> None:
     resp = order_client.post("/orders", json=order_payload)
     assert resp.status_code == 201
     order_data = resp.json()
-    assert order_data["status"] == "CONFIRMED"
-    order_id = order_data["order_id"]
-
-    # Retrieval
-    get_resp = order_client.get(f"/orders/{order_id}")
-    assert get_resp.status_code == 200
-    assert get_resp.json()["order_id"] == order_id
+    assert order_data["status"] == "PENDING"
+    assert order_data["order_id"].startswith("ord_")
