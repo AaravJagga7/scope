@@ -1,0 +1,52 @@
+{
+  "profile": "flash_sale",
+  "target_rps": 500,
+  "achieved_rps": 941.17,
+  "duration_seconds": 1,
+  "actual_duration_seconds": 1.0,
+  "total_requests": 944,
+  "error_count": 0,
+  "error_rate_percent": 0.0,
+  "client_side_latency_percentiles": {
+    "min": 5.59,
+    "avg": 25.42,
+    "p50": 19,
+    "p90": 51,
+    "p95": 55,
+    "p99": 59,
+    "max": 60.16
+  },
+  "endpoints": {
+    "POST /cart/items": {
+      "requests": 490,
+      "failures": 0,
+      "rps": 488.53,
+      "p50": 14,
+      "p95": 19,
+      "p99": 20
+    },
+    "GET /products": {
+      "requests": 49,
+      "failures": 0,
+      "rps": 48.85,
+      "p50": 10,
+      "p95": 15,
+      "p99": 15
+    },
+    "POST /checkout": {
+      "requests": 405,
+      "failures": 0,
+      "rps": 403.79,
+      "p50": 41,
+      "p95": 58,
+      "p99": 60
+    }
+  },
+  "metadata": {
+    "seed": 42,
+    "target_host": "http://127.0.0.1:8006",
+    "mode": "synthetic_simulation",
+    "timestamp_start": "2026-11-12T08:32:40.533826+00:00",
+    "timestamp_end": "2026-11-12T08:32:41.536843+00:00"
+  }
+}

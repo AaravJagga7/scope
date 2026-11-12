@@ -98,7 +98,7 @@ order:
   image: scopex-order:latest
   replicas: 2
   port: 8005
-  consumer_count: 2
+  consumer_count: 1
   db_pool_size: 10
   db_max_overflow: 5
   processing_delay_ms: 50
@@ -111,7 +111,7 @@ order:
       memory: 512Mi
 checkout:
   image: scopex-checkout:latest
-  replicas: 4
+  replicas: 2
   port: 8006
   resources:
     requests:
