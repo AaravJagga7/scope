@@ -1,4 +1,4 @@
-"""Discovery module: GP surrogate, active learning, and interpretable constraint discovery."""
+"""Discovery module: GP surrogate, active learning, constraint discovery, and formal verification."""
 
 from scopex.discovery.acquisition import (
     SLOBoundaryAcquisition,
@@ -31,6 +31,13 @@ from scopex.discovery.surrogate import (
     GPSurrogate,
     build_feature_matrix,
 )
+from scopex.discovery.verification import (
+    DomainBounds,
+    IterationRecord,
+    SLORequirements,
+    VerificationLoop,
+    VerificationSummary,
+)
 
 __all__ = [
     "GPSurrogate",
@@ -54,4 +61,9 @@ __all__ = [
     "learn_sparse_regression_constraints",
     "evaluate_and_rank_constraints",
     "format_constraints_report",
+    "SLORequirements",
+    "DomainBounds",
+    "IterationRecord",
+    "VerificationSummary",
+    "VerificationLoop",
 ]
