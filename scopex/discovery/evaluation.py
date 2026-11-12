@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import Any
 
 import matplotlib
 
@@ -220,3 +221,153 @@ def plot_uncertainty_vs_traffic(
     plt.close(fig)
     logger.info("Saved uncertainty-vs-traffic plot to %s", save_path)
     return save_path
+
+
+def plot_active_learning_efficiency(
+    results: dict[str, Any],
+    save_path: str | Path,
+    target_accuracy: float = 0.80,
+    threshold: float = 500.0,
+) -> Path:
+    """Plot learning curves comparing BO (SLO boundary), Random Search, and Grid Search.
+
+    Produces a dual-panel figure:
+    - Left panel: Held-out SLO boundary classification accuracy (%) vs. number of experiments,
+      with the target accuracy threshold line and milestone markers.
+    - Right panel: Held-out Latency RMSE (ms) vs. number of experiments.
+
+    Args:
+        results: Dictionary mapping strategy name ('bo', 'random', 'grid') to
+            StrategyResult or dict containing history records.
+        save_path: Destination PNG file path.
+        target_accuracy: Accuracy threshold to highlight (e.g. 0.80 for 80%).
+        threshold: SLO boundary value (e.g. 500.0 ms).
+
+    Returns:
+        Resolved absolute Path to the saved figure.
+    """
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5.5))
+
+    styles = {
+        "bo": {
+            "label": "Bayesian Optimization (SLO Boundary)",
+            "color": "#1f77b4",
+            "marker": "o",
+            "linewidth": 2.2,
+        },
+        "random": {
+            "label": "Random Search",
+            "color": "#ff7f0e",
+            "marker": "s",
+            "linewidth": 1.8,
+        },
+        "grid": {
+            "label": "Grid Search",
+            "color": "#2ca02c",
+            "marker": "^",
+            "linewidth": 1.8,
+        },
+    }
+
+    milestones: dict[str, int | None] = {}
+
+    for strat_key, style in styles.items():
+        if strat_key not in results:
+            continue
+        res = results[strat_key]
+        history = res.history if hasattr(res, "history") else res.get("history", [])
+        milestones[strat_key] = (
+            res.experiments_to_target
+            if hasattr(res, "experiments_to_target")
+            else res.get("experiments_to_target")
+        )
+
+        n_exps = [h.n_experiments if hasattr(h, "n_experiments") else h["n_experiments"] for h in history]
+        accs = [
+            (h.accuracy if hasattr(h, "accuracy") else h["accuracy"]) * 100.0
+            for h in history
+        ]
+        rmses = [h.rmse if hasattr(h, "rmse") else h["rmse"] for h in history]
+
+        # Left: Accuracy
+        ax1.plot(
+            n_exps,
+            accs,
+            label=style["label"],
+            color=style["color"],
+            marker=style["marker"],
+            markersize=4,
+            linewidth=style["linewidth"],
+            alpha=0.9,
+        )
+
+        # Right: RMSE
+        ax2.plot(
+            n_exps,
+            rmses,
+            label=style["label"],
+            color=style["color"],
+            marker=style["marker"],
+            markersize=4,
+            linewidth=style["linewidth"],
+            alpha=0.9,
+        )
+
+    # Reference target accuracy line
+    ax1.axhline(
+        target_accuracy * 100.0,
+        color="crimson",
+        linestyle="--",
+        linewidth=1.4,
+        label=f"Target Accuracy ({int(target_accuracy * 100)}%)",
+    )
+
+    # Highlight milestones on accuracy plot
+    for strat_key, m_exp in milestones.items():
+        if m_exp is not None and strat_key in styles:
+            color = styles[strat_key]["color"]
+            ax1.axvline(
+                m_exp,
+                color=color,
+                linestyle=":",
+                linewidth=1.2,
+                alpha=0.7,
+            )
+            ax1.scatter(
+                [m_exp],
+                [target_accuracy * 100.0],
+                color=color,
+                s=80,
+                zorder=5,
+                edgecolor="black",
+            )
+
+    ax1.set_xlabel("Number of Experiments", fontsize=11)
+    ax1.set_ylabel("Held-Out SLO Accuracy (%)", fontsize=11)
+    ax1.set_title(
+        f"Sample Efficiency: Accuracy on SLO Boundary (p95 ≤ {threshold:.0f}ms)",
+        fontsize=12,
+        fontweight="bold",
+    )
+    ax1.set_ylim(40, 100)
+    ax1.grid(True, alpha=0.3)
+    ax1.legend(loc="lower right", fontsize=9)
+
+    ax2.set_xlabel("Number of Experiments", fontsize=11)
+    ax2.set_ylabel("Held-Out RMSE (ms)", fontsize=11)
+    ax2.set_title(
+        "Predictive Error Convergence (RMSE)",
+        fontsize=12,
+        fontweight="bold",
+    )
+    ax2.grid(True, alpha=0.3)
+    ax2.legend(loc="upper right", fontsize=9)
+
+    save_path = Path(save_path).resolve()
+    save_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.tight_layout()
+    fig.savefig(save_path, dpi=150)
+    plt.close(fig)
+    logger.info("Saved active learning efficiency plot to %s", save_path)
+    return save_path
+
