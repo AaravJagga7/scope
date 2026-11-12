@@ -29,6 +29,7 @@ MANIFEST
 # Local service logs and process files
 .services.pid
 .services.log
+.cluster_state.json
 *.db
 scopex_dev.db
 

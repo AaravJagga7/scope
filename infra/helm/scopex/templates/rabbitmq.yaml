@@ -60,3 +60,4 @@ spec:
   selector:
     app: rabbitmq
 {{- end }}
+

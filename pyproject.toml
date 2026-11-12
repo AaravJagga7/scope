@@ -78,6 +78,7 @@ select = [
 ignore = [
     "E501", # line length handled by formatter
     "B008", # FastAPI Depends in function arguments
+    "E402", # module level import not at top of file (CLI sys.path bootstrap)
 ]
 
 [tool.pytest.ini_options]

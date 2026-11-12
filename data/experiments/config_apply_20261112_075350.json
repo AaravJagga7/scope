@@ -1,0 +1,31 @@
+{
+  "timestamp": "2026-11-12T07:53:50.955547+00:00",
+  "config_file": "config.json",
+  "seed": 42,
+  "applied_changes": {
+    "checkout": {
+      "replicas": 4
+    }
+  },
+  "target_config": {
+    "checkout": {
+      "replicas": 4,
+      "cpu_limit": "500m",
+      "memory_limit": "512Mi"
+    },
+    "order": {
+      "replicas": 2,
+      "consumer_count": 2,
+      "db_pool_size": 10
+    },
+    "inventory": {
+      "replicas": 2,
+      "db_pool_size": 10
+    },
+    "product": {
+      "replicas": 2,
+      "cache_enabled": true
+    }
+  },
+  "status": "COMPLETED"
+}

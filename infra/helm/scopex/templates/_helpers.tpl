@@ -29,3 +29,4 @@ helm.sh/chart: {{ include "scopex.name" . }}-{{ .Chart.Version | replace "+" "_"
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 app.kubernetes.io/part-of: scopex
 {{- end }}
+

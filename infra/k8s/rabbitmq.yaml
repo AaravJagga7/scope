@@ -63,3 +63,4 @@ spec:
       name: management
   selector:
     app: rabbitmq
+

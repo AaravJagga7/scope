@@ -3,6 +3,9 @@
 import os
 from pathlib import Path
 
+# Prevent Locust from monkey-patching standard library during pytest runs
+os.environ["LOCUST_SKIP_MONKEY_PATCH"] = "1"
+
 # Ensure testing uses an isolated SQLite database and in-memory cache
 TEST_DB_PATH = Path(__file__).resolve().parent / "test_scopex.db"
 os.environ["DATABASE_URL"] = f"sqlite:///{TEST_DB_PATH}"

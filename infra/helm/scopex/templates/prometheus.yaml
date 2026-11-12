@@ -98,3 +98,4 @@ spec:
   selector:
     app: prometheus
 {{- end }}
+
