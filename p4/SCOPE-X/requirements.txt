@@ -1,0 +1,12 @@
+numpy>=1.26
+scipy>=1.11
+pandas>=2.0
+scikit-learn>=1.4
+matplotlib>=3.8
+pytest>=8
+# live service + load testing
+fastapi>=0.110
+uvicorn>=0.29
+locust>=2.24
+# Milestone 4 (constraint verification)
+z3-solver>=4.12

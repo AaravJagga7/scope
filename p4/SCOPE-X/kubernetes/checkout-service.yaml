@@ -1,0 +1,19 @@
+# Stable in-cluster address for Checkout: http://checkout.default.svc:80
+# Traffic is load-balanced across every *ready* Checkout pod.
+#
+#   kubectl apply -f kubernetes/checkout-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: checkout
+  labels:
+    app: checkout
+    part-of: scope-x
+spec:
+  type: ClusterIP
+  selector:
+    app: checkout
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

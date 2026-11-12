@@ -1,0 +1,58 @@
+# Checkout Deployment (temporary nginx placeholder).
+#
+# Replace `image:` with Person 2's Checkout image when it is ready; keep the
+# labels, so the Scale Manager and Prometheus keep finding the pods.
+#
+#   kubectl apply -f kubernetes/checkout-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: checkout
+  labels:
+    app: checkout
+    part-of: scope-x
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: checkout          # must match the pods' labels; immutable after creation
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0      # never drop below the requested capacity during an update
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: checkout
+        part-of: scope-x
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: checkout
+          image: nginx:1.27
+          ports:
+            - name: http
+              containerPort: 80
+          # Fixed requests/limits: replica count is the scaling variable, so
+          # each replica must have the same capacity (part A of S = (r_c, r_s, A)).
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+          # "Ready" must mean "can serve traffic", or scale timings are meaningless.
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 1
+            periodSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
