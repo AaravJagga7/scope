@@ -146,6 +146,60 @@ def build_parser() -> argparse.ArgumentParser:
     # Subcommand: dataset-info / status
     subparsers.add_parser("dataset-info", help="Display dataset statistics and split partitioning")
 
+    # Subcommand: optimize (OR-Tools CP-SAT)
+    opt_parser = subparsers.add_parser(
+        "optimize",
+        help="Use OR-Tools CP-SAT to find the cost-optimal microservice configuration",
+    )
+    opt_parser.add_argument(
+        "--workload",
+        "-w",
+        type=int,
+        required=True,
+        help="Target workload level in requests per second (RPS)",
+    )
+    opt_parser.add_argument(
+        "--cost-model",
+        type=str,
+        default=None,
+        help="Path to custom CostModel YAML or JSON file",
+    )
+    opt_parser.add_argument(
+        "--preset",
+        choices=["standard", "strict_availability", "cost_saving"],
+        default="standard",
+        help="Cost profile preset (default: standard)",
+    )
+    opt_parser.add_argument(
+        "--min-admission",
+        type=float,
+        default=0.0,
+        help="Minimum required admission rate in [0.0, 1.0]",
+    )
+    opt_parser.add_argument(
+        "--max-replicas",
+        type=int,
+        default=20,
+        help="Maximum allowed replica count (default: 20)",
+    )
+    opt_parser.add_argument(
+        "--max-cpu",
+        type=int,
+        default=2000,
+        help="Maximum container CPU limit in milliCPUs (default: 2000)",
+    )
+    opt_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output raw JSON instead of formatted report",
+    )
+    opt_parser.add_argument(
+        "--json-output",
+        type=str,
+        default=None,
+        help="Save result JSON to specified file path",
+    )
+
     return parser
 
 
@@ -315,6 +369,59 @@ def handle_dataset_info(args: argparse.Namespace) -> int:
     return 0
 
 
+def handle_optimize(args: argparse.Namespace) -> int:
+    """Handles 'scopex optimize' command using OR-Tools CP-SAT."""
+    import json
+
+    from scopex.optimisation import CostModel, CPSATConfigOptimizer
+
+    if args.cost_model:
+        model_path = Path(args.cost_model)
+        if not model_path.exists():
+            print(f"Error: Cost model file not found: {model_path}")
+            return 1
+        if model_path.suffix in (".yaml", ".yml"):
+            cost_model = CostModel.from_yaml(model_path)
+        else:
+            cost_model = CostModel.from_json(model_path)
+    else:
+        if args.preset == "strict_availability":
+            cost_model = CostModel.strict_availability()
+        elif args.preset == "cost_saving":
+            cost_model = CostModel.cost_saving()
+        else:
+            cost_model = CostModel.standard_cloud()
+
+    optimizer = CPSATConfigOptimizer(
+        cost_model=cost_model,
+        max_replicas=args.max_replicas,
+        max_cpu_milli=args.max_cpu,
+    )
+
+    try:
+        result = optimizer.optimize(
+            workload_rps=args.workload,
+            min_admission_rate=args.min_admission,
+        )
+    except Exception as exc:
+        print(f"Error: Optimization failed: {exc}")
+        return 1
+
+    if args.json:
+        print(json.dumps(result.to_dict(), indent=2))
+    else:
+        print("\n" + result.format_report() + "\n")
+
+    if args.json_output:
+        out_path = Path(args.json_output)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump(result.to_dict(), f, indent=2)
+        print(f"✓ Optimization result saved to: {out_path}\n")
+
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """Main CLI entrypoint."""
     parser = build_parser()
@@ -332,6 +439,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return handle_list_groups()
     if args.subcommand in ("dataset-info", "status"):
         return handle_dataset_info(args)
+    if args.subcommand == "optimize":
+        return handle_optimize(args)
 
     parser.print_help()
     return 1

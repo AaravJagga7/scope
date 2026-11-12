@@ -1,0 +1,131 @@
+{
+  "workload_rps": 500,
+  "status": "OPTIMAL",
+  "cheapest_config": {
+    "checkout_replicas": 2,
+    "db_pool_size": 25,
+    "cpu_limit": "1500m",
+    "cpu_limit_milli": 1500,
+    "admission_rate": 1.0,
+    "admission_rate_pct": 100,
+    "admitted_rps": 500,
+    "shed_rps": 0,
+    "cache_enabled": true
+  },
+  "cost_breakdown": {
+    "replica_base_cost": 0.1,
+    "cpu_cost": 0.12,
+    "db_pool_cost": 0.1,
+    "cache_cost": 0.02,
+    "penalty_cost": 0.0,
+    "total_hourly_cost": 0.34
+  },
+  "active_constraints": [
+    {
+      "name": "Admission Control Upper Bound",
+      "category": "admission",
+      "description": "Full demand served: 100% of incoming workload (500 RPS) admitted without load shedding.",
+      "inequality": "admission_rate <= 100%",
+      "bound_value": 100.0,
+      "actual_value": 100.0,
+      "slack": 0.0,
+      "is_binding": true
+    },
+    {
+      "name": "Service CPU Throughput Capacity",
+      "category": "capacity",
+      "description": "Tight throughput limit: Cluster capacity (525 RPS) directly bounds admitted traffic (500 RPS). Lowering CPU (1500m) or replicas (2) would violate the p95 <= 500ms SLO.",
+      "inequality": "admitted_rps <= (replicas * cpu_milli / 1000) * 175",
+      "bound_value": 525.0,
+      "actual_value": 500.0,
+      "slack": 25.0,
+      "is_binding": true
+    },
+    {
+      "name": "Cache Requirement Invariant",
+      "category": "caching",
+      "description": "Cache requirement enforced: Traffic (500 RPS) exceeds 300 RPS; operating uncached triggers cascading DB queue saturation and latency violation.",
+      "inequality": "cache_enabled == 1 (for RPS > 300)",
+      "bound_value": 300.0,
+      "actual_value": 500.0,
+      "slack": 0.0,
+      "is_binding": true
+    },
+    {
+      "name": "DB Pool Concurrency Floor",
+      "category": "database",
+      "description": "DB pool has 25 spare total connections beyond cluster concurrency minimum.",
+      "inequality": "replicas * db_pool_size >= ceil(admitted_rps / 20)",
+      "bound_value": 25.0,
+      "actual_value": 50.0,
+      "slack": 25.0,
+      "is_binding": false
+    },
+    {
+      "name": "High-Load DB Pool Constraint",
+      "category": "database",
+      "description": "Tightened DB constraint binding: Validated rule 'db_pool_size <= 25 and target_rps > 400 => SLO_VIOLATION' actively bounds pool size to at least 25.",
+      "inequality": "db_pool_size >= 25",
+      "bound_value": 25.0,
+      "actual_value": 25.0,
+      "slack": 0.0,
+      "is_binding": true
+    },
+    {
+      "name": "PostgreSQL Global Connection Ceiling",
+      "category": "database",
+      "description": "Global connection margin: 150 spare connections available.",
+      "inequality": "replicas * db_pool_size <= 200",
+      "bound_value": 200.0,
+      "actual_value": 50.0,
+      "slack": 150.0,
+      "is_binding": false
+    }
+  ],
+  "binding_constraints": [
+    {
+      "name": "Admission Control Upper Bound",
+      "category": "admission",
+      "description": "Full demand served: 100% of incoming workload (500 RPS) admitted without load shedding.",
+      "inequality": "admission_rate <= 100%",
+      "bound_value": 100.0,
+      "actual_value": 100.0,
+      "slack": 0.0,
+      "is_binding": true
+    },
+    {
+      "name": "Service CPU Throughput Capacity",
+      "category": "capacity",
+      "description": "Tight throughput limit: Cluster capacity (525 RPS) directly bounds admitted traffic (500 RPS). Lowering CPU (1500m) or replicas (2) would violate the p95 <= 500ms SLO.",
+      "inequality": "admitted_rps <= (replicas * cpu_milli / 1000) * 175",
+      "bound_value": 525.0,
+      "actual_value": 500.0,
+      "slack": 25.0,
+      "is_binding": true
+    },
+    {
+      "name": "Cache Requirement Invariant",
+      "category": "caching",
+      "description": "Cache requirement enforced: Traffic (500 RPS) exceeds 300 RPS; operating uncached triggers cascading DB queue saturation and latency violation.",
+      "inequality": "cache_enabled == 1 (for RPS > 300)",
+      "bound_value": 300.0,
+      "actual_value": 500.0,
+      "slack": 0.0,
+      "is_binding": true
+    },
+    {
+      "name": "High-Load DB Pool Constraint",
+      "category": "database",
+      "description": "Tightened DB constraint binding: Validated rule 'db_pool_size <= 25 and target_rps > 400 => SLO_VIOLATION' actively bounds pool size to at least 25.",
+      "inequality": "db_pool_size >= 25",
+      "bound_value": 25.0,
+      "actual_value": 25.0,
+      "slack": 0.0,
+      "is_binding": true
+    }
+  ],
+  "explanation": "At a workload of 500 RPS, the optimizer selected 2 Checkout replica(s) with 1500m CPU and db_pool_size=25 (cache=enabled), admitting 500 RPS (100%). Total estimated cost is $0.3400/hour. Active binding constraints driving this configuration: ['Admission Control Upper Bound', 'Service CPU Throughput Capacity', 'Cache Requirement Invariant', 'High-Load DB Pool Constraint'].",
+  "solve_time_ms": 2.58,
+  "slo_p95_latency_ms": 500.0,
+  "slo_error_rate_pct": 1.0
+}
