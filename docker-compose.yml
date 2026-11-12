@@ -1,0 +1,136 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: scopex-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: scopex
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d scopex"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: scopex-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  product:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: scopex-product
+    command: ["uvicorn", "services.product.main:app", "--host", "0.0.0.0", "--port", "8001"]
+    environment:
+      PORT: "8001"
+      CACHE_ENABLED: "true"
+      REDIS_URL: "redis://redis:6379/0"
+      LOG_LEVEL: "INFO"
+    ports:
+      - "8001:8001"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  cart:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: scopex-cart
+    command: ["uvicorn", "services.cart.main:app", "--host", "0.0.0.0", "--port", "8002"]
+    environment:
+      PORT: "8002"
+      LOG_LEVEL: "INFO"
+    ports:
+      - "8002:8002"
+
+  inventory:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: scopex-inventory
+    command: ["uvicorn", "services.inventory.main:app", "--host", "0.0.0.0", "--port", "8003"]
+    environment:
+      PORT: "8003"
+      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/scopex"
+      DB_POOL_SIZE: "10"
+      DB_MAX_OVERFLOW: "5"
+      LOG_LEVEL: "INFO"
+    ports:
+      - "8003:8003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  payment:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: scopex-payment
+    command: ["uvicorn", "services.payment.main:app", "--host", "0.0.0.0", "--port", "8004"]
+    environment:
+      PORT: "8004"
+      PAYMENT_LATENCY_MS: "50"
+      PAYMENT_FAILURE_RATE: "0.0"
+      LOG_LEVEL: "INFO"
+    ports:
+      - "8004:8004"
+
+  order:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: scopex-order
+    command: ["uvicorn", "services.order.main:app", "--host", "0.0.0.0", "--port", "8005"]
+    environment:
+      PORT: "8005"
+      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/scopex"
+      DB_POOL_SIZE: "10"
+      DB_MAX_OVERFLOW: "5"
+      LOG_LEVEL: "INFO"
+    ports:
+      - "8005:8005"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  checkout:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: scopex-checkout
+    command: ["uvicorn", "services.checkout.main:app", "--host", "0.0.0.0", "--port", "8006"]
+    environment:
+      PORT: "8006"
+      CART_SERVICE_URL: "http://cart:8002"
+      INVENTORY_SERVICE_URL: "http://inventory:8003"
+      PAYMENT_SERVICE_URL: "http://payment:8004"
+      ORDER_SERVICE_URL: "http://order:8005"
+      LOG_LEVEL: "INFO"
+    ports:
+      - "8006:8006"
+    depends_on:
+      - cart
+      - inventory
+      - payment
+      - order
+
+volumes:
+  postgres_data:
+  redis_data:
