@@ -14,7 +14,22 @@ os.environ["PAYMENT_FAILURE_RATE"] = "0.0"
 os.environ["PAYMENT_LATENCY_MS"] = "0"
 
 
+def _remove_sqlite_files(db_path: Path) -> None:
+    """Remove a SQLite DB and any WAL / shared-memory sidecar files.
+
+    Stale -wal / -shm files left over from a previous aborted test run can
+    cause SQLite to open the database in read-only mode on the next run.
+    """
+    for suffix in ("", "-wal", "-shm"):
+        p = db_path.with_name(db_path.name + suffix)
+        p.unlink(missing_ok=True)
+
+
+# Clean up any leftover DB from a prior (possibly crashed) run *before* the
+# service modules are imported, so they always start with a fresh file.
+_remove_sqlite_files(TEST_DB_PATH)
+
+
 def pytest_sessionfinish(session, exitstatus) -> None:
     """Clean up test SQLite database after test run."""
-    if TEST_DB_PATH.exists():
-        TEST_DB_PATH.unlink(missing_ok=True)
+    _remove_sqlite_files(TEST_DB_PATH)
