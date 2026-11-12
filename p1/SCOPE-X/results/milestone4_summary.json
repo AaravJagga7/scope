@@ -1,0 +1,224 @@
+{
+  "verifier_backend": "exact",
+  "slo_L95_max_ms": 250.0,
+  "refinement_experiment": {
+    "start": "15 random experiments",
+    "repeats": 6,
+    "max_iterations": 5,
+    "tests_per_iteration": 8,
+    "before_refinement_mean_f1": 0.8157,
+    "after_monotone": {
+      "cegis": {
+        "mean_f1": 0.8966,
+        "min": 0.8664,
+        "max": 0.9163
+      },
+      "random": {
+        "mean_f1": 0.8769,
+        "min": 0.8161,
+        "max": 0.9123
+      }
+    },
+    "after_tree_ablation": {
+      "cegis": {
+        "mean_f1": 0.8646,
+        "min": 0.7898,
+        "max": 0.9143
+      },
+      "random": {
+        "mean_f1": 0.9136,
+        "min": 0.9,
+        "max": 0.9309
+      }
+    },
+    "mean_extra_experiments": 38.333333333333336,
+    "counterexample_hit_rate_by_source": {
+      "boundary": {
+        "tested": 110,
+        "counterexamples": 37,
+        "rate": 0.336
+      },
+      "gp_disagreement": {
+        "tested": 120,
+        "counterexamples": 92,
+        "rate": 0.767
+      }
+    }
+  },
+  "constraint_C1": {
+    "initial_rule": "IF (min(\u03bb,a)/r > 96)\n  OR (min(\u03bb,a) > 327 AND min(\u03bb,a)/r > 66)\n  OR (replicas <= 3.50 AND bucket_capacity > 160)\nTHEN L95_ms > L_max",
+    "final_rule": "IF (min(\u03bb,a)/r > 102)\n  OR (replicas <= 2.50 AND bucket_capacity > 160)\n  OR (min(\u03bb,a) > 346 AND min(\u03bb,a)/r > 67)\nTHEN L95_ms > L_max",
+    "status": "candidate",
+    "held_out_before": {
+      "accuracy": 0.8867,
+      "precision": 0.817,
+      "recall": 0.9542,
+      "f1": 0.8803,
+      "tp": 125,
+      "fp": 28,
+      "fn": 6,
+      "tn": 141
+    },
+    "held_out_after": {
+      "accuracy": 0.9233,
+      "precision": 0.8971,
+      "recall": 0.9313,
+      "f1": 0.9139,
+      "tp": 122,
+      "fp": 14,
+      "fn": 9,
+      "tn": 155
+    },
+    "refinement": {
+      "iterations": 5,
+      "converged": false,
+      "extra_experiments": 40,
+      "counterexamples_found": 24,
+      "counterexamples_per_iteration": [
+        4,
+        6,
+        4,
+        5,
+        5
+      ],
+      "tested_per_iteration": [
+        8,
+        8,
+        8,
+        8,
+        8
+      ],
+      "by_source": {
+        "gp_disagreement": {
+          "tested": 20,
+          "counterexamples": 20
+        },
+        "boundary": {
+          "tested": 20,
+          "counterexamples": 4
+        }
+      },
+      "assumption_violations": [],
+      "pruned_clauses": 0,
+      "checks_sat": 67,
+      "checks_unsat": 26,
+      "unresolved_validation_failures": 6
+    },
+    "final_checks": [
+      {
+        "check": "clause_satisfiable",
+        "status": "sat",
+        "backend": "exact",
+        "detail": "clause 0"
+      },
+      {
+        "check": "clause_satisfiable",
+        "status": "sat",
+        "backend": "exact",
+        "detail": "clause 1"
+      },
+      {
+        "check": "clause_satisfiable",
+        "status": "sat",
+        "backend": "exact",
+        "detail": "clause 2"
+      },
+      {
+        "check": "rule_satisfiable",
+        "status": "sat",
+        "backend": "exact",
+        "detail": ""
+      },
+      {
+        "check": "negation_satisfiable",
+        "status": "sat",
+        "backend": "exact",
+        "detail": ""
+      },
+      {
+        "check": "monotone[replicas:never_creates]",
+        "status": "unsat",
+        "backend": "exact",
+        "detail": ""
+      },
+      {
+        "check": "monotone[traffic_rate:never_removes]",
+        "status": "unsat",
+        "backend": "exact",
+        "detail": ""
+      },
+      {
+        "check": "monotone[admission_rate:never_removes]",
+        "status": "unsat",
+        "backend": "exact",
+        "detail": ""
+      },
+      {
+        "check": "monotone[bucket_capacity:never_removes]",
+        "status": "unsat",
+        "backend": "exact",
+        "detail": ""
+      },
+      {
+        "check": "boundary[min(\u03bb,a)/r > 102:outside]",
+        "status": "sat",
+        "backend": "exact",
+        "detail": ""
+      },
+      {
+        "check": "boundary[min(\u03bb,a)/r > 102:inside]",
+        "status": "sat",
+        "backend": "exact",
+        "detail": ""
+      },
+      {
+        "check": "boundary[replicas <= 2.50:outside]",
+        "status": "unsat",
+        "backend": "exact",
+        "detail": ""
+      },
+      {
+        "check": "boundary[replicas <= 2.50:inside]",
+        "status": "unsat",
+        "backend": "exact",
+        "detail": ""
+      },
+      {
+        "check": "boundary[bucket_capacity > 160:outside]",
+        "status": "sat",
+        "backend": "exact",
+        "detail": ""
+      },
+      {
+        "check": "boundary[bucket_capacity > 160:inside]",
+        "status": "sat",
+        "backend": "exact",
+        "detail": ""
+      },
+      {
+        "check": "boundary[min(\u03bb,a) > 346:outside]",
+        "status": "sat",
+        "backend": "exact",
+        "detail": ""
+      },
+      {
+        "check": "boundary[min(\u03bb,a) > 346:inside]",
+        "status": "sat",
+        "backend": "exact",
+        "detail": ""
+      },
+      {
+        "check": "boundary[min(\u03bb,a)/r > 67:outside]",
+        "status": "sat",
+        "backend": "exact",
+        "detail": ""
+      },
+      {
+        "check": "boundary[min(\u03bb,a)/r > 67:inside]",
+        "status": "sat",
+        "backend": "exact",
+        "detail": ""
+      }
+    ]
+  }
+}

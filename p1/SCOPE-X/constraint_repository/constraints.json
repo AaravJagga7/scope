@@ -1,0 +1,380 @@
+[
+  {
+    "id": "C1_checkout_p95_latency",
+    "created": "2026-11-11T17:35:26",
+    "status": "candidate",
+    "target": "L95_ms > L_max",
+    "slo": {
+      "L95_max_ms": 250.0
+    },
+    "rule": {
+      "target": "L95_ms > L_max",
+      "clauses": [
+        [
+          {
+            "feature": "load_per_replica",
+            "op": ">",
+            "threshold": 101.992
+          }
+        ],
+        [
+          {
+            "feature": "replicas",
+            "op": "<=",
+            "threshold": 2.5
+          },
+          {
+            "feature": "bucket_capacity",
+            "op": ">",
+            "threshold": 159.6538
+          }
+        ],
+        [
+          {
+            "feature": "admitted_load",
+            "op": ">",
+            "threshold": 346.3952
+          },
+          {
+            "feature": "load_per_replica",
+            "op": ">",
+            "threshold": 67.0655
+          }
+        ]
+      ]
+    },
+    "text": "IF (min(\u03bb,a)/r > 102)\n  OR (replicas <= 2.50 AND bucket_capacity > 160)\n  OR (min(\u03bb,a) > 346 AND min(\u03bb,a)/r > 67)\nTHEN L95_ms > L_max",
+    "domain": {
+      "traffic_rate": [
+        100,
+        800
+      ],
+      "replicas": [
+        1,
+        6
+      ],
+      "admission_rate": [
+        50,
+        600
+      ],
+      "queue_capacity": [
+        100,
+        1000
+      ],
+      "bucket_capacity": [
+        10,
+        200
+      ]
+    },
+    "scale": {
+      "replicas": [
+        1,
+        6
+      ],
+      "db_pool_size": 8,
+      "workers_per_replica": 4,
+      "testbed": "simulated (Milestones 1-3 surrogate)"
+    },
+    "evidence": {
+      "file": "evidence/C1_checkout_p95_latency.csv",
+      "n_experiments": 100
+    },
+    "verification": [
+      {
+        "check": "clause_satisfiable",
+        "status": "sat",
+        "backend": "exact",
+        "detail": "clause 0",
+        "witness": [
+          {
+            "traffic_rate": 458.964,
+            "replicas": 4.0,
+            "admission_rate": 509.96,
+            "queue_capacity": 550.0,
+            "bucket_capacity": 200.0
+          }
+        ]
+      },
+      {
+        "check": "clause_satisfiable",
+        "status": "sat",
+        "backend": "exact",
+        "detail": "clause 1",
+        "witness": [
+          {
+            "traffic_rate": 450.0,
+            "replicas": 2.0,
+            "admission_rate": 50.0,
+            "queue_capacity": 101.0,
+            "bucket_capacity": 160.0
+          }
+        ]
+      },
+      {
+        "check": "clause_satisfiable",
+        "status": "sat",
+        "backend": "exact",
+        "detail": "clause 2",
+        "witness": [
+          {
+            "traffic_rate": 800.0,
+            "replicas": 1.0,
+            "admission_rate": 402.393,
+            "queue_capacity": 550.0,
+            "bucket_capacity": 10.0
+          }
+        ]
+      },
+      {
+        "check": "rule_satisfiable",
+        "status": "sat",
+        "backend": "exact",
+        "detail": "",
+        "witness": [
+          {
+            "traffic_rate": 800.0,
+            "replicas": 1.0,
+            "admission_rate": 167.664,
+            "queue_capacity": 101.0,
+            "bucket_capacity": 10.0
+          }
+        ]
+      },
+      {
+        "check": "negation_satisfiable",
+        "status": "sat",
+        "backend": "exact",
+        "detail": "",
+        "witness": [
+          {
+            "traffic_rate": 100.0,
+            "replicas": 5.0,
+            "admission_rate": 340.861,
+            "queue_capacity": 999.0,
+            "bucket_capacity": 199.0
+          }
+        ]
+      },
+      {
+        "check": "monotone[replicas:never_creates]",
+        "status": "unsat",
+        "backend": "exact",
+        "detail": "",
+        "witness": []
+      },
+      {
+        "check": "monotone[traffic_rate:never_removes]",
+        "status": "unsat",
+        "backend": "exact",
+        "detail": "",
+        "witness": []
+      },
+      {
+        "check": "monotone[admission_rate:never_removes]",
+        "status": "unsat",
+        "backend": "exact",
+        "detail": "",
+        "witness": []
+      },
+      {
+        "check": "monotone[bucket_capacity:never_removes]",
+        "status": "unsat",
+        "backend": "exact",
+        "detail": "",
+        "witness": []
+      },
+      {
+        "check": "boundary[min(\u03bb,a)/r > 102:outside]",
+        "status": "sat",
+        "backend": "exact",
+        "detail": "",
+        "witness": [
+          {
+            "traffic_rate": 186.757,
+            "replicas": 2.0,
+            "admission_rate": 186.757,
+            "queue_capacity": 550.0,
+            "bucket_capacity": 85.0
+          }
+        ]
+      },
+      {
+        "check": "boundary[min(\u03bb,a)/r > 102:inside]",
+        "status": "sat",
+        "backend": "exact",
+        "detail": "",
+        "witness": [
+          {
+            "traffic_rate": 513.456,
+            "replicas": 2.0,
+            "admission_rate": 204.456,
+            "queue_capacity": 100.0,
+            "bucket_capacity": 11.0
+          }
+        ]
+      },
+      {
+        "check": "boundary[replicas <= 2.50:outside]",
+        "status": "unsat",
+        "backend": "exact",
+        "detail": "",
+        "witness": []
+      },
+      {
+        "check": "boundary[replicas <= 2.50:inside]",
+        "status": "unsat",
+        "backend": "exact",
+        "detail": "",
+        "witness": []
+      },
+      {
+        "check": "boundary[bucket_capacity > 160:outside]",
+        "status": "sat",
+        "backend": "exact",
+        "detail": "",
+        "witness": [
+          {
+            "traffic_rate": 611.952,
+            "replicas": 2.0,
+            "admission_rate": 203.984,
+            "queue_capacity": 100.0,
+            "bucket_capacity": 156.0
+          }
+        ]
+      },
+      {
+        "check": "boundary[bucket_capacity > 160:inside]",
+        "status": "sat",
+        "backend": "exact",
+        "detail": "",
+        "witness": [
+          {
+            "traffic_rate": 201.196,
+            "replicas": 2.0,
+            "admission_rate": 268.262,
+            "queue_capacity": 101.0,
+            "bucket_capacity": 163.0
+          }
+        ]
+      },
+      {
+        "check": "boundary[min(\u03bb,a) > 346:outside]",
+        "status": "sat",
+        "backend": "exact",
+        "detail": "",
+        "witness": [
+          {
+            "traffic_rate": 340.861,
+            "replicas": 5.0,
+            "admission_rate": 402.393,
+            "queue_capacity": 101.0,
+            "bucket_capacity": 200.0
+          }
+        ]
+      },
+      {
+        "check": "boundary[min(\u03bb,a) > 346:inside]",
+        "status": "sat",
+        "backend": "exact",
+        "detail": "",
+        "witness": [
+          {
+            "traffic_rate": 611.952,
+            "replicas": 2.0,
+            "admission_rate": 361.395,
+            "queue_capacity": 1000.0,
+            "bucket_capacity": 10.0
+          }
+        ]
+      },
+      {
+        "check": "boundary[min(\u03bb,a)/r > 67:outside]",
+        "status": "sat",
+        "backend": "exact",
+        "detail": "",
+        "witness": [
+          {
+            "traffic_rate": 402.393,
+            "replicas": 6.0,
+            "admission_rate": 422.644,
+            "queue_capacity": 550.0,
+            "bucket_capacity": 160.0
+          }
+        ]
+      },
+      {
+        "check": "boundary[min(\u03bb,a)/r > 67:inside]",
+        "status": "sat",
+        "backend": "exact",
+        "detail": "",
+        "witness": [
+          {
+            "traffic_rate": 407.968,
+            "replicas": 6.0,
+            "admission_rate": 503.676,
+            "queue_capacity": 101.0,
+            "bucket_capacity": 199.0
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "held_out": {
+        "accuracy": 0.9233,
+        "precision": 0.8971,
+        "recall": 0.9313,
+        "f1": 0.9139,
+        "tp": 122,
+        "fp": 14,
+        "fn": 9,
+        "tn": 155
+      },
+      "before_refinement": {
+        "accuracy": 0.8867,
+        "precision": 0.817,
+        "recall": 0.9542,
+        "f1": 0.8803,
+        "tp": 125,
+        "fp": 28,
+        "fn": 6,
+        "tn": 141
+      }
+    },
+    "refinement": {
+      "iterations": 5,
+      "converged": false,
+      "extra_experiments": 40,
+      "counterexamples_found": 24,
+      "counterexamples_per_iteration": [
+        4,
+        6,
+        4,
+        5,
+        5
+      ],
+      "tested_per_iteration": [
+        8,
+        8,
+        8,
+        8,
+        8
+      ],
+      "by_source": {
+        "gp_disagreement": {
+          "tested": 20,
+          "counterexamples": 20
+        },
+        "boundary": {
+          "tested": 20,
+          "counterexamples": 4
+        }
+      },
+      "assumption_violations": [],
+      "pruned_clauses": 0,
+      "checks_sat": 67,
+      "checks_unsat": 26,
+      "unresolved_validation_failures": 6
+    },
+    "notes": "Validation criterion: held-out F1 >= 0.85 and unresolved failures <= 5% of evidence. Formal results hold only within the encoded domain and assumptions. Formal checks were executed by the exact fallback solver (backend 'exact'); the Z3 encoding is implemented but not yet executed or cross-validated. Mechanism explanations (e.g. shared-DB saturation for clause 3) are hypotheses, not established by the rule."
+  }
+]
