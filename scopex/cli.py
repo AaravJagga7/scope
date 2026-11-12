@@ -200,6 +200,48 @@ def build_parser() -> argparse.ArgumentParser:
         help="Save result JSON to specified file path",
     )
 
+    # Subcommand: compare (Task 16)
+    cmp_parser = subparsers.add_parser(
+        "compare",
+        help="Compare scaling strategies (Fixed, HPA, Queue, SCOPE-X) under identical workloads and seeds",
+    )
+    cmp_parser.add_argument(
+        "--profile",
+        "-p",
+        choices=["flash_sale", "normal", "ramp", "viral_product", "slow_payment_api"],
+        default="flash_sale",
+        help="Workload traffic profile (default: flash_sale)",
+    )
+    cmp_parser.add_argument(
+        "--rps",
+        type=int,
+        default=700,
+        help="Peak target requests per second (default: 700)",
+    )
+    cmp_parser.add_argument(
+        "--duration",
+        type=int,
+        default=60,
+        help="Workload duration in seconds (default: 60)",
+    )
+    cmp_parser.add_argument(
+        "--seed",
+        type=int,
+        default=42,
+        help="Random seed for reproducible trace and noise (default: 42)",
+    )
+    cmp_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output raw JSON instead of formatted report",
+    )
+    cmp_parser.add_argument(
+        "--json-output",
+        type=str,
+        default=None,
+        help="Save result JSON to specified file path",
+    )
+
     return parser
 
 
@@ -422,6 +464,38 @@ def handle_optimize(args: argparse.Namespace) -> int:
     return 0
 
 
+def handle_compare(args: argparse.Namespace) -> int:
+    """Handles 'scopex compare' execution across autoscaling strategies."""
+    import json
+
+    from scopex.decision import run_comparison
+
+    try:
+        report = run_comparison(
+            profile=args.profile,
+            peak_rps=args.rps,
+            duration_seconds=args.duration,
+            seed=args.seed,
+        )
+    except Exception as exc:
+        print(f"Error: Comparison failed: {exc}")
+        return 1
+
+    if args.json:
+        print(json.dumps(report.to_dict(), indent=2))
+    else:
+        print("\n" + report.format_table() + "\n")
+
+    if args.json_output:
+        out_path = Path(args.json_output)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump(report.to_dict(), f, indent=2)
+        print(f"✓ Comparison summary saved to: {out_path}\n")
+
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """Main CLI entrypoint."""
     parser = build_parser()
@@ -441,6 +515,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return handle_dataset_info(args)
     if args.subcommand == "optimize":
         return handle_optimize(args)
+    if args.subcommand == "compare":
+        return handle_compare(args)
 
     parser.print_help()
     return 1
