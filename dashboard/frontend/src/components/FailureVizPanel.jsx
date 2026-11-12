@@ -88,3 +88,4 @@ export default function FailureVizPanel({ failureData }) {
     </div>
   );
 }
+

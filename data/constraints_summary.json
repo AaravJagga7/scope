@@ -1,0 +1,325 @@
+{
+  "target_col": "p95_latency_ms",
+  "threshold": 500.0,
+  "train_samples": 204,
+  "heldout_samples": 48,
+  "total_rules": 12,
+  "top_constraints": [
+    {
+      "variables": [
+        "target_rps",
+        "cache_enabled"
+      ],
+      "inequality": "target_rps > 487.50 and cache_enabled <= 0.50",
+      "human_readable": "IF target_rps > 487.50 and cache_enabled <= 0.50 THEN SLO_VIOLATION",
+      "method": "decision_tree",
+      "confidence": 1.0,
+      "support": 0.3039,
+      "support_count": 62,
+      "source_experiments_count": 62,
+      "source_experiments": [
+        "run_6470f631fa",
+        "run_65500b3b45",
+        "run_a4e9d5c990",
+        "run_4ba153844c",
+        "run_8519811871",
+        "run_66341c7944",
+        "run_44ab9791b8",
+        "run_d1e96d5daf",
+        "run_3bdc96af1b",
+        "run_fefebbd5f0"
+      ],
+      "z3_expr": "And(target_rps > 487.50, cache_enabled <= 0.50)",
+      "smt2": "(and (> target_rps (/ 975.0 2.0)) (<= cache_enabled (/ 1.0 2.0)))",
+      "heldout_precision": 1.0,
+      "heldout_recall": 0.6,
+      "heldout_f1": 0.75,
+      "heldout_support": 12
+    },
+    {
+      "variables": [
+        "target_rps",
+        "checkout_replicas",
+        "db_pool_size",
+        "cache_enabled"
+      ],
+      "inequality": "0.00093 * target_rps - 0.00666 * checkout_replicas + +0.00157 * db_pool_size - 0.15622 * cache_enabled >= 0.4311",
+      "human_readable": "IF 0.00093 * target_rps - 0.00666 * checkout_replicas + +0.00157 * db_pool_size - 0.15622 * cache_enabled >= 0.4311 THEN SLO_VIOLATION",
+      "method": "sparse_regression",
+      "confidence": 0.8037,
+      "support": 0.5245,
+      "support_count": 107,
+      "source_experiments_count": 107,
+      "source_experiments": [
+        "run_dd1c8e744a",
+        "run_d614363aef",
+        "run_9dade9fd4a",
+        "run_6470f631fa",
+        "run_2851b0cf82",
+        "run_65500b3b45",
+        "run_91c0afb093",
+        "run_a4e9d5c990",
+        "run_ba89f61842",
+        "run_bc219236e5"
+      ],
+      "z3_expr": "(+0.00093 * target_rps) + (-0.00666 * checkout_replicas) + (+0.00157 * db_pool_size) + (-0.15622 * cache_enabled) >= 0.4311",
+      "smt2": "(>= (+ (* (/ 93.0 100000.0) target_rps)\n       (* (- (/ 333.0 50000.0)) checkout_replicas)\n       (* (/ 157.0 100000.0) db_pool_size)\n       (* (- (/ 7811.0 50000.0)) cache_enabled))\n    (/ 4311.0 10000.0))",
+      "heldout_precision": 0.6,
+      "heldout_recall": 0.9,
+      "heldout_f1": 0.72,
+      "heldout_support": 30
+    },
+    {
+      "variables": [
+        "target_rps",
+        "checkout_replicas",
+        "db_pool_size",
+        "cache_enabled"
+      ],
+      "inequality": "0.00087 * target_rps - 0.01911 * checkout_replicas + +0.00167 * db_pool_size - 0.37137 * cache_enabled >= 0.2423",
+      "human_readable": "IF 0.00087 * target_rps - 0.01911 * checkout_replicas + +0.00167 * db_pool_size - 0.37137 * cache_enabled >= 0.2423 THEN SLO_VIOLATION",
+      "method": "sparse_regression",
+      "confidence": 0.7966,
+      "support": 0.5784,
+      "support_count": 118,
+      "source_experiments_count": 118,
+      "source_experiments": [
+        "run_8cb8b66f4a",
+        "run_ba0423fec0",
+        "run_1e4e85b091",
+        "run_34576590d3",
+        "run_cd4021e9a2",
+        "run_dd1c8e744a",
+        "run_d614363aef",
+        "run_9dade9fd4a",
+        "run_6470f631fa",
+        "run_65500b3b45"
+      ],
+      "z3_expr": "(+0.00087 * target_rps) + (-0.01911 * checkout_replicas) + (+0.00167 * db_pool_size) + (-0.37137 * cache_enabled) >= 0.2423",
+      "smt2": "(>= (+ (* (/ 87.0 100000.0) target_rps)\n       (* (- (/ 1911.0 100000.0)) checkout_replicas)\n       (* (/ 167.0 100000.0) db_pool_size)\n       (* (- (/ 37137.0 100000.0)) cache_enabled))\n    (/ 2423.0 10000.0))",
+      "heldout_precision": 0.5833,
+      "heldout_recall": 0.7,
+      "heldout_f1": 0.6364,
+      "heldout_support": 24
+    },
+    {
+      "variables": [
+        "target_rps",
+        "checkout_replicas",
+        "db_pool_size",
+        "cache_enabled"
+      ],
+      "inequality": "0.00089 * target_rps - 0.01413 * checkout_replicas + +0.00163 * db_pool_size - 0.28531 * cache_enabled >= 0.3178",
+      "human_readable": "IF 0.00089 * target_rps - 0.01413 * checkout_replicas + +0.00163 * db_pool_size - 0.28531 * cache_enabled >= 0.3178 THEN SLO_VIOLATION",
+      "method": "sparse_regression",
+      "confidence": 0.7895,
+      "support": 0.5588,
+      "support_count": 114,
+      "source_experiments_count": 114,
+      "source_experiments": [
+        "run_1e4e85b091",
+        "run_34576590d3",
+        "run_cd4021e9a2",
+        "run_dd1c8e744a",
+        "run_d614363aef",
+        "run_9dade9fd4a",
+        "run_6470f631fa",
+        "run_2851b0cf82",
+        "run_65500b3b45",
+        "run_91c0afb093"
+      ],
+      "z3_expr": "(+0.00089 * target_rps) + (-0.01413 * checkout_replicas) + (+0.00163 * db_pool_size) + (-0.28531 * cache_enabled) >= 0.3178",
+      "smt2": "(>= (+ (* (/ 89.0 100000.0) target_rps)\n       (* (- (/ 1413.0 100000.0)) checkout_replicas)\n       (* (/ 163.0 100000.0) db_pool_size)\n       (* (- (/ 28531.0 100000.0)) cache_enabled))\n    (/ 1589.0 5000.0))",
+      "heldout_precision": 0.5833,
+      "heldout_recall": 0.7,
+      "heldout_f1": 0.6364,
+      "heldout_support": 24
+    },
+    {
+      "variables": [
+        "target_rps",
+        "db_pool_size"
+      ],
+      "inequality": "0.00097 * target_rps + +0.00150 * db_pool_size >= 0.5540",
+      "human_readable": "IF 0.00097 * target_rps + +0.00150 * db_pool_size >= 0.5540 THEN SLO_VIOLATION",
+      "method": "sparse_regression",
+      "confidence": 0.819,
+      "support": 0.5147,
+      "support_count": 105,
+      "source_experiments_count": 105,
+      "source_experiments": [
+        "run_9dade9fd4a",
+        "run_6470f631fa",
+        "run_2851b0cf82",
+        "run_65500b3b45",
+        "run_91c0afb093",
+        "run_a4e9d5c990",
+        "run_ba89f61842",
+        "run_f89468496d",
+        "run_bc219236e5",
+        "run_4ba153844c"
+      ],
+      "z3_expr": "(+0.00097 * target_rps) + (+0.00150 * db_pool_size) >= 0.5540",
+      "smt2": "(>= (+ (* (/ 97.0 100000.0) target_rps) (* (/ 3.0 2000.0) db_pool_size))\n    (/ 277.0 500.0))",
+      "heldout_precision": 0.5833,
+      "heldout_recall": 0.7,
+      "heldout_f1": 0.6364,
+      "heldout_support": 24
+    },
+    {
+      "variables": [
+        "target_rps",
+        "db_pool_size"
+      ],
+      "inequality": "0.00097 * target_rps + +0.00144 * db_pool_size >= 0.5506",
+      "human_readable": "IF 0.00097 * target_rps + +0.00144 * db_pool_size >= 0.5506 THEN SLO_VIOLATION",
+      "method": "sparse_regression",
+      "confidence": 0.8155,
+      "support": 0.5049,
+      "support_count": 103,
+      "source_experiments_count": 103,
+      "source_experiments": [
+        "run_9dade9fd4a",
+        "run_6470f631fa",
+        "run_2851b0cf82",
+        "run_65500b3b45",
+        "run_91c0afb093",
+        "run_a4e9d5c990",
+        "run_ba89f61842",
+        "run_f89468496d",
+        "run_bc219236e5",
+        "run_4ba153844c"
+      ],
+      "z3_expr": "(+0.00097 * target_rps) + (+0.00144 * db_pool_size) >= 0.5506",
+      "smt2": "(>= (+ (* (/ 97.0 100000.0) target_rps) (* (/ 9.0 6250.0) db_pool_size))\n    (/ 2753.0 5000.0))",
+      "heldout_precision": 0.5833,
+      "heldout_recall": 0.7,
+      "heldout_f1": 0.6364,
+      "heldout_support": 24
+    },
+    {
+      "variables": [
+        "target_rps",
+        "cache_enabled",
+        "db_pool_size"
+      ],
+      "inequality": "target_rps > 487.50 and cache_enabled > 0.50 and db_pool_size > 22.50 and target_rps <= 862.50",
+      "human_readable": "IF target_rps > 487.50 and cache_enabled > 0.50 and db_pool_size > 22.50 and target_rps <= 862.50 THEN SLO_VIOLATION",
+      "method": "decision_tree",
+      "confidence": 0.9167,
+      "support": 0.1176,
+      "support_count": 24,
+      "source_experiments_count": 24,
+      "source_experiments": [
+        "run_2851b0cf82",
+        "run_91c0afb093",
+        "run_8b5731371f",
+        "run_6bc86bfdce",
+        "run_b2a96e4156",
+        "run_b3aea4e53b",
+        "run_469e6fa1c1",
+        "run_7dc6ccc4ac",
+        "run_d0756a6506",
+        "run_17d1234d02"
+      ],
+      "z3_expr": "And(target_rps > 487.50, cache_enabled > 0.50, db_pool_size > 22.50, target_rps <= 862.50)",
+      "smt2": "(and (> target_rps (/ 975.0 2.0))\n     (> cache_enabled (/ 1.0 2.0))\n     (> db_pool_size (/ 45.0 2.0))\n     (<= target_rps (/ 1725.0 2.0)))",
+      "heldout_precision": 0.3333,
+      "heldout_recall": 0.2,
+      "heldout_f1": 0.25,
+      "heldout_support": 12
+    },
+    {
+      "variables": [
+        "target_rps",
+        "cache_enabled",
+        "db_pool_size"
+      ],
+      "inequality": "target_rps > 487.50 and cache_enabled > 0.50 and db_pool_size > 22.50",
+      "human_readable": "IF target_rps > 487.50 and cache_enabled > 0.50 and db_pool_size > 22.50 THEN SLO_VIOLATION",
+      "method": "decision_tree",
+      "confidence": 0.75,
+      "support": 0.1569,
+      "support_count": 32,
+      "source_experiments_count": 32,
+      "source_experiments": [
+        "run_2851b0cf82",
+        "run_91c0afb093",
+        "run_ba89f61842",
+        "run_bc219236e5",
+        "run_8b5731371f",
+        "run_6bc86bfdce",
+        "run_c0f31a433f",
+        "run_b2a96e4156",
+        "run_b3aea4e53b",
+        "run_469e6fa1c1"
+      ],
+      "z3_expr": "And(target_rps > 487.50, cache_enabled > 0.50, db_pool_size > 22.50)",
+      "smt2": "(and (> target_rps (/ 975.0 2.0))\n     (> cache_enabled (/ 1.0 2.0))\n     (> db_pool_size (/ 45.0 2.0)))",
+      "heldout_precision": 0.2857,
+      "heldout_recall": 0.2,
+      "heldout_f1": 0.2353,
+      "heldout_support": 14
+    },
+    {
+      "variables": [
+        "target_rps",
+        "cache_enabled",
+        "checkout_replicas"
+      ],
+      "inequality": "target_rps <= 487.50 and cache_enabled <= 0.50 and checkout_replicas <= 3.50",
+      "human_readable": "IF target_rps <= 487.50 and cache_enabled <= 0.50 and checkout_replicas <= 3.50 THEN SLO_VIOLATION",
+      "method": "decision_tree",
+      "confidence": 0.8333,
+      "support": 0.0588,
+      "support_count": 12,
+      "source_experiments_count": 12,
+      "source_experiments": [
+        "run_edbfc3857c",
+        "run_d655507db9",
+        "run_cbc15c3c18",
+        "run_eae3317184",
+        "run_33cc079a91",
+        "run_bda2f46a67",
+        "run_796f4ef7de",
+        "run_a0eabab9f4",
+        "run_a4f537eb0e",
+        "run_aad54c0c0a"
+      ],
+      "z3_expr": "And(target_rps <= 487.50, cache_enabled <= 0.50, checkout_replicas <= 3.50)",
+      "smt2": "(and (<= target_rps (/ 975.0 2.0))\n     (<= cache_enabled (/ 1.0 2.0))\n     (<= checkout_replicas (/ 7.0 2.0)))",
+      "heldout_precision": 0.0,
+      "heldout_recall": 0.0,
+      "heldout_f1": 0.0,
+      "heldout_support": 0
+    },
+    {
+      "variables": [
+        "target_rps",
+        "cache_enabled",
+        "checkout_replicas"
+      ],
+      "inequality": "target_rps <= 487.50 and cache_enabled <= 0.50 and checkout_replicas <= 3.50 and target_rps <= 287.50",
+      "human_readable": "IF target_rps <= 487.50 and cache_enabled <= 0.50 and checkout_replicas <= 3.50 and target_rps <= 287.50 THEN SLO_VIOLATION",
+      "method": "decision_tree",
+      "confidence": 0.6667,
+      "support": 0.0294,
+      "support_count": 6,
+      "source_experiments_count": 6,
+      "source_experiments": [
+        "run_cbc15c3c18",
+        "run_eae3317184",
+        "run_bda2f46a67",
+        "run_a4f537eb0e",
+        "run_aad54c0c0a",
+        "run_e1ce554495"
+      ],
+      "z3_expr": "And(target_rps <= 487.50, cache_enabled <= 0.50, checkout_replicas <= 3.50, target_rps <= 287.50)",
+      "smt2": "(and (<= target_rps (/ 975.0 2.0))\n     (<= cache_enabled (/ 1.0 2.0))\n     (<= checkout_replicas (/ 7.0 2.0))\n     (<= target_rps (/ 575.0 2.0)))",
+      "heldout_precision": 0.0,
+      "heldout_recall": 0.0,
+      "heldout_f1": 0.0,
+      "heldout_support": 0
+    }
+  ]
+}

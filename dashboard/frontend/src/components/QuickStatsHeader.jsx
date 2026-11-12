@@ -49,3 +49,4 @@ export default function QuickStatsHeader({ stats }) {
     </div>
   );
 }
+

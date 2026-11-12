@@ -3,7 +3,9 @@
 from scopex.storage.config import (
     DEFAULT_SAFETY_LIMITS,
     ExperimentConfig,
+    HPASpec,
     SafetyLimits,
+    VPASpec,
     WorkloadSpec,
 )
 from scopex.storage.dataset import (
@@ -42,7 +44,9 @@ __all__ = [
     "ExperimentRepository",
     "ExperimentRun",
     "ExperimentRunner",
+    "HPASpec",
     "SafetyLimits",
+    "VPASpec",
     "WorkloadSpec",
     "generate_and_store_dataset",
     "generate_grid_configs",

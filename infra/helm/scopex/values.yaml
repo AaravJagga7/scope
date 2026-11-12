@@ -49,7 +49,7 @@ product:
   image: scopex-product:latest
   replicas: 2
   port: 8001
-  cache_enabled: true
+  cache_enabled: false
   resources:
     requests:
       cpu: 100m
@@ -72,7 +72,7 @@ inventory:
   image: scopex-inventory:latest
   replicas: 2
   port: 8003
-  db_pool_size: 50
+  db_pool_size: 150
   db_max_overflow: 5
   resources:
     requests:
@@ -98,8 +98,8 @@ order:
   image: scopex-order:latest
   replicas: 2
   port: 8005
-  consumer_count: 1
-  db_pool_size: 50
+  consumer_count: 2
+  db_pool_size: 150
   db_max_overflow: 5
   processing_delay_ms: 50
   resources:

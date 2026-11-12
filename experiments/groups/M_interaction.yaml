@@ -15,3 +15,4 @@ matrix:
   checkout_replicas: [1, 2, 4, 8]
   db_pool_size: [10, 30, 60]
   cache_enabled: [false, true]
+

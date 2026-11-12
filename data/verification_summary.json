@@ -1,0 +1,87 @@
+{
+  "initial_constraint_str": "target_rps <= 800 and checkout_replicas >= 2",
+  "final_constraint_str": "(((target_rps <= 800 and checkout_replicas >= 2) and (target_rps > 487.50 => cache_enabled == 1)) and (target_rps <= checkout_replicas * 70)) and (db_pool_contention < 0.4311)",
+  "is_verified_in_model": true,
+  "iterations_run": 4,
+  "total_real_experiments": 3,
+  "total_refinements": 3,
+  "history": [
+    {
+      "iteration": 1,
+      "candidate_constraint_str": "target_rps <= 800 and checkout_replicas >= 2",
+      "counterexample_config": {
+        "target_rps": 488.5,
+        "checkout_replicas": 2,
+        "db_pool_size": 10,
+        "cache_enabled": false,
+        "consumers": 1
+      },
+      "model_verification_status": "COUNTEREXAMPLE_FOUND",
+      "real_validation_status": "VALIDATED_ON_REAL_TESTBED",
+      "real_metrics": {
+        "p95_latency_ms": 667.9,
+        "error_rate_pct": 68.32,
+        "db_connections": 10.0,
+        "achieved_rps": 144.2
+      },
+      "real_slo_violated": true,
+      "refinement_clause": "target_rps > 487.50 => cache_enabled == 1",
+      "refined_constraint_str": "(target_rps <= 800 and checkout_replicas >= 2) and (target_rps > 487.50 => cache_enabled == 1)"
+    },
+    {
+      "iteration": 2,
+      "candidate_constraint_str": "(target_rps <= 800 and checkout_replicas >= 2) and (target_rps > 487.50 => cache_enabled == 1)",
+      "counterexample_config": {
+        "target_rps": 140.5,
+        "checkout_replicas": 2,
+        "db_pool_size": 10,
+        "cache_enabled": false,
+        "consumers": 1
+      },
+      "model_verification_status": "COUNTEREXAMPLE_FOUND",
+      "real_validation_status": "VALIDATED_ON_REAL_TESTBED",
+      "real_metrics": {
+        "p95_latency_ms": 660.5,
+        "error_rate_pct": 0.0,
+        "db_connections": 10.0,
+        "achieved_rps": 137.06
+      },
+      "real_slo_violated": true,
+      "refinement_clause": "target_rps <= checkout_replicas * 70",
+      "refined_constraint_str": "((target_rps <= 800 and checkout_replicas >= 2) and (target_rps > 487.50 => cache_enabled == 1)) and (target_rps <= checkout_replicas * 70)"
+    },
+    {
+      "iteration": 3,
+      "candidate_constraint_str": "((target_rps <= 800 and checkout_replicas >= 2) and (target_rps > 487.50 => cache_enabled == 1)) and (target_rps <= checkout_replicas * 70)",
+      "counterexample_config": {
+        "target_rps": 515.4,
+        "checkout_replicas": 7,
+        "db_pool_size": 100,
+        "cache_enabled": true,
+        "consumers": 1
+      },
+      "model_verification_status": "COUNTEREXAMPLE_FOUND",
+      "real_validation_status": "VALIDATED_ON_REAL_TESTBED",
+      "real_metrics": {
+        "p95_latency_ms": 464.3,
+        "error_rate_pct": 4.89,
+        "db_connections": 43.9,
+        "achieved_rps": 488.45
+      },
+      "real_slo_violated": true,
+      "refinement_clause": "db_pool_contention < 0.4311",
+      "refined_constraint_str": "(((target_rps <= 800 and checkout_replicas >= 2) and (target_rps > 487.50 => cache_enabled == 1)) and (target_rps <= checkout_replicas * 70)) and (db_pool_contention < 0.4311)"
+    },
+    {
+      "iteration": 4,
+      "candidate_constraint_str": "(((target_rps <= 800 and checkout_replicas >= 2) and (target_rps > 487.50 => cache_enabled == 1)) and (target_rps <= checkout_replicas * 70)) and (db_pool_contention < 0.4311)",
+      "counterexample_config": null,
+      "model_verification_status": "VERIFIED_IN_THE_MODEL",
+      "real_validation_status": "N/A",
+      "real_metrics": null,
+      "real_slo_violated": false,
+      "refinement_clause": null,
+      "refined_constraint_str": null
+    }
+  ]
+}

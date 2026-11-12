@@ -301,3 +301,4 @@ export default function LiveMonitoringPanel({ telemetryData, onRefresh }) {
     </div>
   );
 }
+

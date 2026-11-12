@@ -190,3 +190,4 @@ class TestPlotActiveLearningEfficiency:
             )
             assert res_path.exists()
             assert res_path.stat().st_size > 1024
+

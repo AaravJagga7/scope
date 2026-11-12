@@ -86,3 +86,4 @@ class TestVerificationLoopEndToEnd:
         assert first_iter.real_slo_violated is True
         assert first_iter.refinement_clause is not None
         assert summary.final_constraint_str != summary.initial_constraint_str
+

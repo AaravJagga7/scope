@@ -71,3 +71,7 @@ experiments/runs/*
 dashboard/frontend/node_modules/
 dashboard/frontend/dist/
 
+
+# Local agent skill symlinks (point into .venv)
+.agents/
+.claude/

@@ -57,10 +57,17 @@ class ExperimentRun:
     error_rate_pct: float = 0.0
     db_connections: float = 0.0
     cpu_pct: float = 0.0
+    scaling_mode: str = "static"
+    scaling_events: list[dict[str, Any]] = field(default_factory=list)
+    replica_time_series: list[dict[str, Any]] = field(default_factory=list)
+    pod_lifecycle_events: list[dict[str, Any]] = field(default_factory=list)
+    restart_window_seconds: float = 0.0
+    vpa_recommendations: list[dict[str, Any]] = field(default_factory=list)
 
     def to_flat_dict(self) -> dict[str, Any]:
         """Flattens run record for tabular storage and DataFrame export."""
         cfg_dict = self.config.to_dict()
+        mode = self.scaling_mode or cfg_dict.get("scaling_mode", "static")
         return {
             "experiment_id": self.experiment_id,
             "run_id": self.run_id,
@@ -89,6 +96,13 @@ class ExperimentRun:
             "error_rate_pct": self.error_rate_pct,
             "db_connections": self.db_connections,
             "cpu_pct": self.cpu_pct,
+            # Autoscaling & Telemetry
+            "scaling_mode": mode,
+            "scaling_events_json": json.dumps(self.scaling_events),
+            "replica_time_series_json": json.dumps(self.replica_time_series),
+            "pod_lifecycle_json": json.dumps(self.pod_lifecycle_events),
+            "restart_window_seconds": self.restart_window_seconds,
+            "vpa_recommendations_json": json.dumps(self.vpa_recommendations),
             # Full JSON serializations
             "config_json": json.dumps(cfg_dict),
             "metrics_json": json.dumps(self.metrics),
@@ -147,6 +161,18 @@ class ExperimentRepository:
                 conn.execute("ALTER TABLE experiment_runs ADD COLUMN group_name TEXT DEFAULT ''")
             except sqlite3.OperationalError:
                 pass  # column already exists
+            for col_def in [
+                "scaling_mode TEXT DEFAULT 'static'",
+                "scaling_events_json TEXT DEFAULT '[]'",
+                "replica_time_series_json TEXT DEFAULT '[]'",
+                "pod_lifecycle_json TEXT DEFAULT '[]'",
+                "restart_window_seconds REAL DEFAULT 0.0",
+                "vpa_recommendations_json TEXT DEFAULT '[]'",
+            ]:
+                try:
+                    conn.execute(f"ALTER TABLE experiment_runs ADD COLUMN {col_def}")
+                except sqlite3.OperationalError:
+                    pass
             conn.execute("CREATE INDEX IF NOT EXISTS idx_exp_id ON experiment_runs(experiment_id)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_split ON experiment_runs(split)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_group ON experiment_runs(group_name)")
@@ -256,7 +282,38 @@ class ExperimentRepository:
         cfg_dict = json.loads(row["config_json"])
         cfg = ExperimentConfig.from_dict(cfg_dict)
         metrics_dict = json.loads(row["metrics_json"])
-        group = row["group_name"] if "group_name" in row.keys() and row["group_name"] else ""
+        row_keys = set(row.keys())
+        group = row["group_name"] if "group_name" in row_keys and row["group_name"] else ""
+        scaling_mode = (
+            row["scaling_mode"]
+            if "scaling_mode" in row_keys and row["scaling_mode"]
+            else cfg.scaling_mode
+        )
+        scaling_events = (
+            json.loads(row["scaling_events_json"])
+            if "scaling_events_json" in row_keys and row["scaling_events_json"]
+            else []
+        )
+        replica_ts = (
+            json.loads(row["replica_time_series_json"])
+            if "replica_time_series_json" in row_keys and row["replica_time_series_json"]
+            else []
+        )
+        pod_events = (
+            json.loads(row["pod_lifecycle_json"])
+            if "pod_lifecycle_json" in row_keys and row["pod_lifecycle_json"]
+            else []
+        )
+        restart_window = (
+            float(row["restart_window_seconds"])
+            if "restart_window_seconds" in row_keys and row["restart_window_seconds"] is not None
+            else 0.0
+        )
+        vpa_recs = (
+            json.loads(row["vpa_recommendations_json"])
+            if "vpa_recommendations_json" in row_keys and row["vpa_recommendations_json"]
+            else []
+        )
         return ExperimentRun(
             experiment_id=row["experiment_id"],
             run_id=row["run_id"],
@@ -276,4 +333,10 @@ class ExperimentRepository:
             error_rate_pct=float(row["error_rate_pct"]),
             db_connections=float(row["db_connections"]),
             cpu_pct=float(row["cpu_pct"]),
+            scaling_mode=scaling_mode,
+            scaling_events=scaling_events,
+            replica_time_series=replica_ts,
+            pod_lifecycle_events=pod_events,
+            restart_window_seconds=restart_window,
+            vpa_recommendations=vpa_recs,
         )

@@ -1,0 +1,36 @@
+{
+  "profile": "ramp",
+  "target_rps": 350,
+  "achieved_rps": 349.94,
+  "duration_seconds": 10,
+  "actual_duration_seconds": 10.04,
+  "total_requests": 3514,
+  "error_count": 0,
+  "error_rate_percent": 0.0,
+  "client_side_latency_percentiles": {
+    "min": 3.92,
+    "avg": 17.8,
+    "p50": 17,
+    "p90": 27,
+    "p95": 31,
+    "p99": 40,
+    "max": 67.19
+  },
+  "endpoints": {
+    "POST /checkout": {
+      "requests": 3514,
+      "failures": 0,
+      "rps": 349.94,
+      "p50": 17,
+      "p95": 31,
+      "p99": 40
+    }
+  },
+  "metadata": {
+    "seed": 43,
+    "target_host": "http://127.0.0.1:8006",
+    "mode": "synthetic_simulation",
+    "timestamp_start": "2026-11-12T12:37:58.141170+00:00",
+    "timestamp_end": "2026-11-12T12:38:08.183210+00:00"
+  }
+}

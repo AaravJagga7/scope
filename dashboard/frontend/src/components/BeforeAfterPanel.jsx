@@ -167,3 +167,4 @@ export default function BeforeAfterPanel({ comparisonData }) {
     </div>
   );
 }
+

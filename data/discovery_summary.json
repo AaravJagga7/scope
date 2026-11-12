@@ -1,0 +1,30 @@
+[
+  {
+    "target": "p95_latency_ms",
+    "metrics": {
+      "r2": 0.9025843724641976,
+      "rmse": 423.1038226193287,
+      "calibration_coverage": 0.8333333333333334,
+      "ci_z": 1.645,
+      "n_samples": 48
+    },
+    "plots": [
+      "data/gp_predicted_vs_actual_p95_latency_ms.png",
+      "data/gp_uncertainty_vs_traffic_p95_latency_ms.png"
+    ]
+  },
+  {
+    "target": "error_rate_pct",
+    "metrics": {
+      "r2": 0.8725694002075906,
+      "rmse": 11.48875374990679,
+      "calibration_coverage": 0.9166666666666666,
+      "ci_z": 1.645,
+      "n_samples": 48
+    },
+    "plots": [
+      "data/gp_predicted_vs_actual_error_rate_pct.png",
+      "data/gp_uncertainty_vs_traffic_error_rate_pct.png"
+    ]
+  }
+]

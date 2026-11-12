@@ -538,3 +538,4 @@ sequenceDiagram
     Exec->>K8s: Apply Configuration Patch / Log Audit
     K8s-->>Operator: Stable Capacity Maintained (0.6% SLO Violations)
 ```
+

@@ -124,3 +124,4 @@ def select_next_candidate_bo(
 
     best_local_idx = int(np.argmax(scores))
     return remaining_indices[best_local_idx]
+
