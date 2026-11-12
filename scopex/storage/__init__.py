@@ -7,6 +7,7 @@ from scopex.storage.config import (
     SafetyLimits,
     VPASpec,
     WorkloadSpec,
+    assert_no_autoscaler_conflict,
 )
 from scopex.storage.dataset import (
     generate_and_store_dataset,
@@ -48,6 +49,7 @@ __all__ = [
     "SafetyLimits",
     "VPASpec",
     "WorkloadSpec",
+    "assert_no_autoscaler_conflict",
     "generate_and_store_dataset",
     "generate_grid_configs",
     "generate_lhs_configs",

@@ -347,11 +347,17 @@ class ExperimentRunner:
         duration = max(1, config.workload.duration)
         scaling_mode = config.scaling_mode
         initial_replicas = config.checkout_replicas
+        cpu_request = "250m"
         cpu_limit = config.cpu_limit
+        mem_request = "256Mi"
         mem_limit = "512Mi"
+        vpa_resources: dict[str, Any] | None = None
         if config.vpa:
-            cpu_limit = config.vpa.cpu_limit
-            mem_limit = config.vpa.memory_limit
+            vpa_resources = config.vpa.resolved_resources()
+            cpu_request = vpa_resources["cpu_request"]
+            cpu_limit = vpa_resources["cpu_limit"]
+            mem_request = vpa_resources["memory_request"]
+            mem_limit = vpa_resources["memory_limit"]
 
         replica_time_series: list[dict[str, Any]] = []
         scaling_events: list[dict[str, Any]] = []
@@ -380,7 +386,9 @@ class ExperimentRunner:
                     "second": s,
                     "timestamp": t_point.isoformat(),
                     "replicas": initial_replicas,
+                    "cpu_request": cpu_request,
                     "cpu_limit": cpu_limit,
+                    "memory_request": mem_request,
                     "memory_limit": mem_limit,
                     "cpu_utilization_pct": min(95.0, 35.0 + initial_replicas * 8.0),
                     "traffic_rps": config.workload.rps,
@@ -453,7 +461,9 @@ class ExperimentRunner:
                     "second": s,
                     "timestamp": t_point.isoformat(),
                     "replicas": current_r,
+                    "cpu_request": cpu_request,
                     "cpu_limit": cpu_limit,
+                    "memory_request": mem_request,
                     "memory_limit": mem_limit,
                     "cpu_utilization_pct": cpu_util,
                     "traffic_rps": current_rps,
@@ -467,10 +477,22 @@ class ExperimentRunner:
                     "timestamp": start_time.isoformat(),
                     "service": "checkout",
                     "current_cpu": config.cpu_limit,
-                    "recommended_cpu": vpa.cpu_limit,
+                    "recommended_cpu": cpu_limit,
                     "current_memory": "512Mi",
-                    "recommended_memory": vpa.memory_limit,
+                    "recommended_memory": mem_limit,
                     "reason": f"Observed resource saturation profile during {config.workload.profile} workload",
+                })
+                scaling_events.append({
+                    "timestamp": start_time.isoformat(),
+                    "second": 0,
+                    "event_type": "vpa_recommendation",
+                    "from_replicas": initial_replicas,
+                    "to_replicas": initial_replicas,
+                    "reason": "VPA recommendation-only mode: suggestion logged, not applied",
+                    "target_metric": vpa.target_metric,
+                    "cpu_limit": cpu_limit,
+                    "memory_limit": mem_limit,
+                    "applied": False,
                 })
             else:
                 if vpa.in_place_resize:
@@ -488,6 +510,26 @@ class ExperimentRunner:
                             "ready_duration_seconds": 1.2,
                             "status": "Ready",
                         })
+                scaling_events.append({
+                    "timestamp": start_time.isoformat(),
+                    "second": 0,
+                    "event_type": "vertical_resize",
+                    "from_replicas": initial_replicas,
+                    "to_replicas": initial_replicas,
+                    "reason": (
+                        "In-place resource resize applied"
+                        if vpa.in_place_resize
+                        else "Rolling restart to apply resource resize"
+                    ),
+                    "target_metric": vpa.target_metric,
+                    "level": (vpa_resources or {}).get("level"),
+                    "cpu_request": cpu_request,
+                    "cpu_limit": cpu_limit,
+                    "memory_request": mem_request,
+                    "memory_limit": mem_limit,
+                    "restart_window_seconds": restart_window_seconds,
+                    "applied": True,
+                })
 
             for s in range(duration + 1):
                 t_point = start_time + datetime.timedelta(seconds=s)
@@ -495,7 +537,9 @@ class ExperimentRunner:
                     "second": s,
                     "timestamp": t_point.isoformat(),
                     "replicas": initial_replicas,
+                    "cpu_request": cpu_request,
                     "cpu_limit": cpu_limit,
+                    "memory_request": mem_request,
                     "memory_limit": mem_limit,
                     "cpu_utilization_pct": min(95.0, 30.0 + initial_replicas * 7.0),
                     "traffic_rps": config.workload.rps,

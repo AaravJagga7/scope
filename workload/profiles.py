@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 from locust import LoadTestShape
@@ -80,6 +81,17 @@ PROFILES: dict[str, ProfileConfig] = {
         max_wait=0.2,
         spawn_rate_multiplier=0.5,
     ),
+    "sinusoidal": ProfileConfig(
+        name="sinusoidal",
+        description="Oscillating traffic that repeatedly crosses the capacity boundary, exercising scale-up and scale-down.",
+        user_class_name="SinusoidalUser",
+        checkout_weight=50,
+        browse_weight=30,
+        cart_weight=20,
+        min_wait=0.05,
+        max_wait=0.25,
+        spawn_rate_multiplier=0.8,
+    ),
 }
 
 
@@ -116,6 +128,45 @@ class FlashSaleLoadShape(LoadTestShape):
             return None
         # Spawn all users at once
         return (self.target_users, float(self.target_users))
+
+
+class SinusoidalLoadShape(LoadTestShape):
+    """Oscillates user count around the target to repeatedly cross the capacity boundary."""
+
+    target_users: int = 100
+    duration: int = 60
+    cycles: float = 2.0
+    floor_ratio: float = 0.3
+
+    def tick(self) -> tuple[int, float] | None:
+        run_time = self.get_run_time()
+        if run_time > self.duration:
+            return None
+
+        progress = min(1.0, run_time / float(self.duration))
+        oscillation = 0.5 * (1.0 + math.sin(2.0 * math.pi * self.cycles * progress))
+        # Range [floor_ratio, 1.0] of target users, peaking once per cycle
+        ratio = self.floor_ratio + (1.0 - self.floor_ratio) * oscillation
+        current_users = max(1, int(self.target_users * ratio))
+        spawn_rate = max(1.0, float(self.target_users) / float(self.duration))
+        return (current_users, spawn_rate)
+
+
+def instantaneous_rps_fraction(profile_name: str, progress: float) -> float:
+    """Returns the fraction of target RPS active at *progress* in [0, 1] for a profile.
+
+    Used by the telemetry simulators so synthetic runs follow the same traffic
+    shape as the corresponding Locust load shape.
+    """
+    p = min(1.0, max(0.0, float(progress)))
+    if profile_name == "ramp":
+        return 0.1 + 0.9 * p
+    if profile_name == "flash_sale":
+        # Near-instant spike, then sustained at target.
+        return 1.0 if p >= 0.02 else 0.15
+    if profile_name == "sinusoidal":
+        return 0.3 + 0.7 * (0.5 * (1.0 + math.sin(2.0 * math.pi * 2.0 * p)))
+    return 1.0
 
 
 def get_profile_config(profile_name: str) -> ProfileConfig:

@@ -36,6 +36,7 @@ infra/
 │   ├── payment.yaml
 │   ├── order.yaml
 │   ├── checkout.yaml
+│   ├── hpa-checkout.yaml          # Opt-in HorizontalPodAutoscaler (generated/updated by apply_config)
 │   ├── prometheus.yaml
 │   └── grafana.yaml
 ├── prometheus/
@@ -73,3 +74,30 @@ python scripts/apply_config.py config.json --timeout 120
 ```
 
 When connected to a live Kubernetes cluster (`kind` or `minikube`), the script triggers `kubectl scale`, `kubectl set env`, and tracks `kubectl rollout status`. In development environments without a live cluster, the script manages the local cluster state simulation, manifest updates, and verifies pod readiness.
+
+## Scaling Modes (Task 14A)
+
+Every `ExperimentConfig` carries a `scaling_mode` of `static`, `hpa`, or `vertical`. The cluster controller exposes the same modes:
+
+```bash
+# Horizontal: enable HPA on Checkout (CPU metric, parameterised behaviour)
+python scripts/apply_config.py config.json --enable-hpa \
+    --hpa-min 2 --hpa-max 8 --hpa-metric cpu --hpa-target-cpu 70 \
+    --hpa-scale-up-window 0 --hpa-scale-down-window 60
+
+# Disable HPA and return Checkout to static replica control
+python scripts/apply_config.py config.json --disable-hpa
+
+# Vertical: select a defined resource level (request = 50% of limit by default)
+python scripts/apply_config.py config.json --vpa-level 2 --no-in-place-resize
+
+# Vertical: explicit requests/limits, recommendation-only (never applied)
+python scripts/apply_config.py config.json --vpa-mode recommendation \
+    --vpa-cpu-request 500m --vpa-cpu-limit 1000m \
+    --vpa-memory-request 512Mi --vpa-memory-limit 1024Mi
+```
+
+- **HPA** rewrites `infra/k8s/hpa-checkout.yaml` with the requested metric, target utilisation, replica bounds, and scale-up/scale-down stabilisation windows and policies.
+- **Vertical** rewrites Checkout's CPU/memory requests and limits. In-place resize is used when the API server exposes the `pods/resize` subresource (`InPlacePodVerticalScaling`); otherwise the controller falls back to a rolling restart and records the restart window.
+- **Safety invariant:** HPA and VPA may never drive the *same* metric. Configurations that would do so are rejected with a `Safety Violation` error before any manifest or cluster state is touched.
+- Per-run telemetry (replica-count series, CPU/memory requests and limits, pod start/ready times, and timestamped scaling events) is stored with each run in SQLite/Parquet.

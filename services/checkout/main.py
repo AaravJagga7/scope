@@ -35,6 +35,9 @@ class CheckoutRequest(BaseModel):
     cart_id: str
     user_id: str = "guest_user"
     payment_method: str = "credit_card"
+    #: When set, stock was already reserved at add-to-cart time (TTL hold); checkout
+    #: locks and commits that hold instead of reserving again.
+    hold_id: str | None = None
 
 
 class CheckoutResponse(BaseModel):
@@ -177,9 +180,14 @@ async def process_checkout(request: CheckoutRequest) -> CheckoutResponse:
             reservation_payload = {
                 "items": [{"product_id": i["product_id"], "quantity": i["quantity"]} for i in items]
             }
+            reserve_url = (
+                f"{INVENTORY_SERVICE_URL}/inventory/holds/{request.hold_id}/lock"
+                if request.hold_id
+                else f"{INVENTORY_SERVICE_URL}/inventory/reserve"
+            )
             try:
                 inv_resp = await client.post(
-                    f"{INVENTORY_SERVICE_URL}/inventory/reserve",
+                    reserve_url,
                     json=reservation_payload,
                     headers=trace_headers,
                 )
@@ -262,7 +270,9 @@ async def process_checkout(request: CheckoutRequest) -> CheckoutResponse:
             # Step 5: Finalize deduction and clear cart asynchronously/best-effort
             try:
                 await client.post(
-                    f"{INVENTORY_SERVICE_URL}/inventory/deduct",
+                    f"{INVENTORY_SERVICE_URL}/inventory/holds/{request.hold_id}/commit"
+                    if request.hold_id
+                    else f"{INVENTORY_SERVICE_URL}/inventory/deduct",
                     json=reservation_payload,
                     headers=trace_headers,
                 )

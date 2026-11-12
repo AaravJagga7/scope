@@ -1,0 +1,36 @@
+{
+  "timestamp": "2026-11-12T14:12:58.999001+00:00",
+  "config_file": "/var/folders/1n/qt0dq89n33l06k5hnzyy1s_40000gn/T/tmpohomhbz9.json",
+  "seed": 42,
+  "applied_changes": {
+    "inventory": {
+      "db_pool_size": 30
+    },
+    "order": {
+      "db_pool_size": 30
+    }
+  },
+  "target_config": {
+    "scaling_mode": "static",
+    "checkout": {
+      "replicas": 4,
+      "cpu_limit": "500m"
+    },
+    "order": {
+      "db_pool_size": 30,
+      "consumer_count": 2
+    },
+    "inventory": {
+      "db_pool_size": 30
+    },
+    "product": {
+      "cache_enabled": false
+    }
+  },
+  "scaling": {
+    "mode": "static",
+    "hpa": null,
+    "vpa": null
+  },
+  "status": "COMPLETED"
+}

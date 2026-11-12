@@ -272,8 +272,14 @@ def generate_hpa_manifest(
     scale_down_policy: str = "Percent",
     scale_down_value: int = 50,
     namespace: str = "scopex",
+    metric: str = "cpu",
+    manifest_path: Path | None = None,
 ) -> str:
     """Generates and writes a parameterised HorizontalPodAutoscaler manifest."""
+    resource_metric = str(metric or "cpu").strip().lower()
+    if resource_metric not in {"cpu", "memory"}:
+        raise ValueError(f"HPA metric must be 'cpu' or 'memory', got '{metric}'")
+
     manifest = f"""apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -293,7 +299,7 @@ spec:
   metrics:
     - type: Resource
       resource:
-        name: cpu
+        name: {resource_metric}
         target:
           type: Utilization
           averageUtilization: {target_cpu_pct}
@@ -313,9 +319,60 @@ spec:
           periodSeconds: 15
       selectPolicy: Min
 """
-    manifest_path = K8S_MANIFESTS_DIR / f"hpa-{target_deployment}.yaml"
-    manifest_path.write_text(manifest)
+    out_path = manifest_path or (K8S_MANIFESTS_DIR / f"hpa-{target_deployment}.yaml")
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(manifest)
     return manifest
+
+
+def supports_in_place_resize(namespace: str = "scopex") -> bool:
+    """Detects whether the API server exposes the pods/resize subresource.
+
+    In-place pod resize requires the InPlacePodVerticalScaling feature (GA in
+    Kubernetes 1.33). When unavailable, vertical changes need a rolling restart.
+    """
+    if not shutil.which("kubectl"):
+        return False
+    try:
+        res = subprocess.run(
+            ["kubectl", "get", "--raw", "/api/v1"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if res.returncode != 0:
+            return False
+        data = json.loads(res.stdout)
+        return any(resource.get("name") == "pods/resize" for resource in data.get("resources", []))
+    except Exception as exc:
+        logger.debug("In-place resize capability probe failed: %s", exc)
+        return False
+
+
+def resolve_vpa_resources(vpa_config: dict[str, Any]) -> dict[str, Any]:
+    """Resolves CPU/memory requests and limits from an explicit level or raw values."""
+    # Imported lazily to avoid a circular import: scopex.storage.runner imports this module.
+    from scopex.storage.config import VPASpec
+
+    defaults = VPASpec()
+    level = vpa_config.get("level")
+    if level is None:
+        return {
+            "level": None,
+            "cpu_request": vpa_config.get("cpu_request", defaults.cpu_request),
+            "cpu_limit": vpa_config.get("cpu_limit", defaults.cpu_limit),
+            "memory_request": vpa_config.get("memory_request", defaults.memory_request),
+            "memory_limit": vpa_config.get("memory_limit", defaults.memory_limit),
+        }
+
+    spec = VPASpec(
+        level=int(level),
+        cpu_levels=list(vpa_config.get("cpu_levels") or defaults.cpu_levels),
+        memory_levels=list(vpa_config.get("memory_levels") or defaults.memory_levels),
+        request_ratio=float(vpa_config.get("request_ratio", defaults.request_ratio)),
+    )
+    spec.validate()
+    return spec.resolved_resources()
 
 
 def apply_hpa(
@@ -348,25 +405,33 @@ def apply_hpa(
     up_val = int(hpa_config.get("scale_up_value", 100))
     down_pol = str(hpa_config.get("scale_down_policy", "Percent"))
     down_val = int(hpa_config.get("scale_down_value", 50))
+    metric = str(hpa_config.get("metric", "cpu")).strip().lower()
 
-    generate_hpa_manifest(
-        target_deployment="checkout",
-        min_replicas=min_rep,
-        max_replicas=max_rep,
-        target_cpu_pct=target_cpu,
-        scale_up_stabilization=up_win,
-        scale_down_stabilization=down_win,
-        scale_up_policy=up_pol,
-        scale_up_value=up_val,
-        scale_down_policy=down_pol,
-        scale_down_value=down_val,
-        namespace=namespace,
-    )
+    if dry_run:
+        print(
+            f"  [DRY RUN] Would write HPA manifest: metric={metric}, target={target_cpu}%, "
+            f"range=[{min_rep}, {max_rep}], stabilization=[up:{up_win}s, down:{down_win}s]"
+        )
+    else:
+        generate_hpa_manifest(
+            target_deployment="checkout",
+            min_replicas=min_rep,
+            max_replicas=max_rep,
+            target_cpu_pct=target_cpu,
+            scale_up_stabilization=up_win,
+            scale_down_stabilization=down_win,
+            scale_up_policy=up_pol,
+            scale_up_value=up_val,
+            scale_down_policy=down_pol,
+            scale_down_value=down_val,
+            namespace=namespace,
+            metric=metric,
+        )
 
-    print(
-        f"  → Enabling HPA for Checkout: Target CPU={target_cpu}%, Range=[{min_rep}, {max_rep}] replicas, "
-        f"Stabilization=[up:{up_win}s, down:{down_win}s]..."
-    )
+        print(
+            f"  → Enabling HPA for Checkout: Metric={metric}, Target={target_cpu}%, Range=[{min_rep}, {max_rep}] replicas, "
+            f"Stabilization=[up:{up_win}s, down:{down_win}s]..."
+        )
 
     if live_cluster and not dry_run:
         hpa_manifest_file = K8S_MANIFESTS_DIR / "hpa-checkout.yaml"
@@ -378,12 +443,15 @@ def apply_hpa(
             print("  ✓ HPA applied to live Kubernetes cluster via kubectl.")
         except Exception as e:
             logger.warning("Failed applying HPA to cluster: %s", e)
+    elif dry_run:
+        print("  ✓ [DRY RUN] HPA manifest not written.")
     else:
         print("  ✓ HPA manifest updated in infra/k8s/hpa-checkout.yaml.")
 
     return {
         "enabled": True,
         "target": "checkout",
+        "metric": metric,
         "min_replicas": min_rep,
         "max_replicas": max_rep,
         "target_cpu_utilization_pct": target_cpu,
@@ -401,10 +469,12 @@ def apply_vpa(
 ) -> dict[str, Any]:
     """Applies or evaluates VPA vertical scaling configuration."""
     mode = vpa_config.get("mode", "auto")
-    cpu_limit = vpa_config.get("cpu_limit", "500m")
-    cpu_request = vpa_config.get("cpu_request", "250m")
-    memory_limit = vpa_config.get("memory_limit", "512Mi")
-    memory_request = vpa_config.get("memory_request", "256Mi")
+    resources = resolve_vpa_resources(vpa_config)
+    cpu_limit = resources["cpu_limit"]
+    cpu_request = resources["cpu_request"]
+    memory_limit = resources["memory_limit"]
+    memory_request = resources["memory_request"]
+    level = resources.get("level")
     in_place = bool(vpa_config.get("in_place_resize", True))
 
     if mode == "recommendation":
@@ -415,6 +485,7 @@ def apply_vpa(
         return {
             "mode": "recommendation",
             "service": service,
+            "level": level,
             "recommended": {
                 "cpu_request": cpu_request,
                 "cpu_limit": cpu_limit,
@@ -425,22 +496,34 @@ def apply_vpa(
             "restart_window_seconds": 0.0,
         }
 
-    # Auto mode: apply changes
+    # Auto mode: resolve whether in-place resize is actually usable on this cluster.
+    in_place_supported = supports_in_place_resize(namespace) if live_cluster else True
+    fallback_reason: str | None = None
+    effective_in_place = in_place
+    if in_place and live_cluster and not dry_run and not in_place_supported:
+        effective_in_place = False
+        fallback_reason = "pods/resize subresource unavailable (InPlacePodVerticalScaling disabled)"
+        print(f"  ! In-place resize requested but unavailable: {fallback_reason}")
+        print("    Falling back to a rolling restart to apply the new resources.")
+
     print(f"\n[VPA AUTO SCALING] Applying vertical scaling for {service}:")
     print(f"  * CPU: {cpu_request} req / {cpu_limit} limit")
     print(f"  * Memory: {memory_request} req / {memory_limit} limit")
-    print(f"  * Mode: {'In-place resize (zero downtime)' if in_place else 'Rolling restart'}")
+    if level is not None:
+        print(f"  * Level: {level} (from configured vertical levels)")
+    print(f"  * Mode: {'In-place resize (zero downtime)' if effective_in_place else 'Rolling restart'}")
 
-    update_k8s_resources(
-        service=service,
-        cpu_request=cpu_request,
-        cpu_limit=cpu_limit,
-        memory_request=memory_request,
-        memory_limit=memory_limit,
-    )
+    if not dry_run:
+        update_k8s_resources(
+            service=service,
+            cpu_request=cpu_request,
+            cpu_limit=cpu_limit,
+            memory_request=memory_request,
+            memory_limit=memory_limit,
+        )
 
     restart_window = 0.0
-    if not in_place:
+    if not effective_in_place:
         start_t = time.time()
         if live_cluster and not dry_run:
             subprocess.run(
@@ -462,9 +545,15 @@ def apply_vpa(
     return {
         "mode": "auto",
         "service": service,
+        "level": level,
         "applied": True,
-        "in_place": in_place,
+        "in_place": effective_in_place,
+        "in_place_requested": in_place,
+        "in_place_supported": in_place_supported,
+        "fallback_reason": fallback_reason,
+        "cpu_request": cpu_request,
         "cpu_limit": cpu_limit,
+        "memory_request": memory_request,
         "memory_limit": memory_limit,
         "restart_window_seconds": restart_window,
     }
@@ -532,6 +621,7 @@ def record_experiment_run(
     target_config: dict[str, Any],
     changes: dict[str, dict[str, Any]],
     seed: int,
+    scaling: dict[str, Any] | None = None,
 ) -> Path:
     """Stores experiment run record reproducibly (config + seed + timestamp)."""
     EXPERIMENTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -543,6 +633,7 @@ def record_experiment_run(
         "seed": seed,
         "applied_changes": changes,
         "target_config": target_config,
+        "scaling": scaling or {"mode": target_config.get("scaling_mode", "static")},
         "status": "COMPLETED",
     }
     with open(record_file, "w") as fp:
@@ -589,6 +680,17 @@ def apply_configuration(
         vpa_config is not None or scaling_mode == "vertical" or "vpa" in raw_config
     )
 
+    # Safety invariant: never drive HPA and VPA from the same metric simultaneously.
+    if has_hpa_req and has_vpa_req:
+        from scopex.storage.config import assert_no_autoscaler_conflict
+
+        effective_hpa = hpa_config or raw_config.get("hpa") or {}
+        effective_vpa = vpa_config or raw_config.get("vpa") or {}
+        assert_no_autoscaler_conflict(
+            effective_hpa.get("metric", "cpu"),
+            effective_vpa.get("target_metric", "memory"),
+        )
+
     # Step 1: Detect configuration diff
     print("\n[1/3] Detecting configuration changes...")
     detected_changes: dict[str, dict[str, Any]] = {}
@@ -608,32 +710,38 @@ def apply_configuration(
             detected_changes[svc] = svc_changes
 
     autoscaling_applied = False
+    hpa_result: dict[str, Any] | None = None
+    vpa_result: dict[str, Any] | None = None
 
     # Process HPA
     if has_hpa_req:
         cfg = hpa_config or raw_config.get("hpa") or {}
-        apply_hpa(cfg, enabled=True, namespace=namespace, live_cluster=live_cluster, dry_run=dry_run)
-        current_state["hpa"] = {"enabled": True, **cfg}
+        hpa_result = apply_hpa(
+            cfg, enabled=True, namespace=namespace, live_cluster=live_cluster, dry_run=dry_run
+        )
+        current_state["hpa"] = {"enabled": True, **cfg, **hpa_result}
         autoscaling_applied = True
     elif enable_hpa is False or (
         scaling_mode in ("static", "vertical")
         and current_state.get("hpa", {}).get("enabled")
     ):
-        apply_hpa({}, enabled=False, namespace=namespace, live_cluster=live_cluster, dry_run=dry_run)
+        hpa_result = apply_hpa(
+            {}, enabled=False, namespace=namespace, live_cluster=live_cluster, dry_run=dry_run
+        )
         current_state["hpa"] = {"enabled": False}
         autoscaling_applied = True
 
     # Process VPA
     if has_vpa_req:
         cfg = vpa_config or raw_config.get("vpa") or {}
-        vpa_res = apply_vpa(
+        vpa_result = apply_vpa(
             cfg,
             service="checkout",
             namespace=namespace,
             live_cluster=live_cluster,
             dry_run=dry_run,
         )
-        current_state["vpa"] = vpa_res
+        current_state["vpa"] = vpa_result
         autoscaling_applied = True
 
     if not detected_changes and not autoscaling_applied:
@@ -714,7 +822,15 @@ def apply_configuration(
 
     # Save experiment artifact
     record_file = record_experiment_run(
-        config_path, raw_config, detected_changes, seed=seed or raw_config.get("seed", 42)
+        config_path,
+        raw_config,
+        detected_changes,
+        seed=seed or raw_config.get("seed", 42),
+        scaling={
+            "mode": scaling_mode,
+            "hpa": hpa_result,
+            "vpa": vpa_result,
+        },
     )
     print(f"Saved experiment run record to {record_file.relative_to(BASE_DIR)}")
     print("================================================================\n")
@@ -762,6 +878,12 @@ def main() -> None:
     parser.add_argument("--hpa-min", type=int, default=1, help="HPA min replicas (default: 1)")
     parser.add_argument("--hpa-max", type=int, default=8, help="HPA max replicas (default: 8)")
     parser.add_argument(
+        "--hpa-metric",
+        choices=["cpu", "memory"],
+        default="cpu",
+        help="HPA resource metric (default: cpu)",
+    )
+    parser.add_argument(
         "--hpa-target-cpu",
         type=int,
         default=70,
@@ -787,6 +909,16 @@ def main() -> None:
     )
     parser.add_argument("--vpa-cpu-limit", default=None, help="VPA CPU limit (e.g. 1000m)")
     parser.add_argument("--vpa-memory-limit", default=None, help="VPA memory limit (e.g. 1024Mi)")
+    parser.add_argument("--vpa-cpu-request", default=None, help="VPA CPU request (e.g. 500m)")
+    parser.add_argument(
+        "--vpa-memory-request", default=None, help="VPA memory request (e.g. 512Mi)"
+    )
+    parser.add_argument(
+        "--vpa-level",
+        type=int,
+        default=None,
+        help="VPA vertical level index (selects CPU/memory request+limit from configured levels)",
+    )
     parser.add_argument(
         "--in-place-resize",
         dest="in_place_resize",
@@ -812,6 +944,7 @@ def main() -> None:
     hpa_cfg = None
     if enable_hpa:
         hpa_cfg = {
+            "metric": args.hpa_metric,
             "min_replicas": args.hpa_min,
             "max_replicas": args.hpa_max,
             "target_cpu_utilization_pct": args.hpa_target_cpu,
@@ -820,23 +953,42 @@ def main() -> None:
         }
 
     vpa_cfg = None
-    if args.vpa_mode or args.vpa_cpu_limit or args.vpa_memory_limit:
+    if (
+        args.vpa_mode
+        or args.vpa_cpu_limit
+        or args.vpa_memory_limit
+        or args.vpa_cpu_request
+        or args.vpa_memory_request
+        or args.vpa_level is not None
+    ):
         vpa_cfg = {
             "mode": args.vpa_mode or "auto",
-            "cpu_limit": args.vpa_cpu_limit or "500m",
-            "memory_limit": args.vpa_memory_limit or "512Mi",
             "in_place_resize": args.in_place_resize,
         }
+        if args.vpa_cpu_limit:
+            vpa_cfg["cpu_limit"] = args.vpa_cpu_limit
+        if args.vpa_memory_limit:
+            vpa_cfg["memory_limit"] = args.vpa_memory_limit
+        if args.vpa_cpu_request:
+            vpa_cfg["cpu_request"] = args.vpa_cpu_request
+        if args.vpa_memory_request:
+            vpa_cfg["memory_request"] = args.vpa_memory_request
+        if args.vpa_level is not None:
+            vpa_cfg["level"] = args.vpa_level
 
-    success = apply_configuration(
-        config_path=args.config,
-        timeout=args.timeout,
-        dry_run=args.dry_run,
-        seed=args.seed,
-        enable_hpa=enable_hpa,
-        hpa_config=hpa_cfg,
-        vpa_config=vpa_cfg,
-    )
+    try:
+        success = apply_configuration(
+            config_path=args.config,
+            timeout=args.timeout,
+            dry_run=args.dry_run,
+            seed=args.seed,
+            enable_hpa=enable_hpa,
+            hpa_config=hpa_cfg,
+            vpa_config=vpa_cfg,
+        )
+    except ValueError as exc:
+        logger.error("Configuration rejected: %s", exc)
+        sys.exit(1)
     if not success:
         sys.exit(1)
 

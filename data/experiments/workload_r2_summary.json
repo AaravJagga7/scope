@@ -1,52 +1,52 @@
 {
   "profile": "flash_sale",
   "target_rps": 100,
-  "achieved_rps": 33.36,
+  "achieved_rps": 34.33,
   "duration_seconds": 1,
-  "actual_duration_seconds": 1.68,
-  "total_requests": 56,
+  "actual_duration_seconds": 1.66,
+  "total_requests": 57,
   "error_count": 0,
   "error_rate_percent": 0.0,
   "client_side_latency_percentiles": {
-    "min": 8.23,
-    "avg": 29.47,
-    "p50": 24,
-    "p90": 56,
-    "p95": 60,
-    "p99": 65,
-    "max": 64.7
+    "min": 9.47,
+    "avg": 28.62,
+    "p50": 22,
+    "p90": 53,
+    "p95": 56,
+    "p99": 62,
+    "max": 62.27
   },
   "endpoints": {
     "POST /cart/items": {
-      "requests": 29,
+      "requests": 28,
       "failures": 0,
-      "rps": 17.28,
-      "p50": 18,
-      "p95": 25,
-      "p99": 25
+      "rps": 16.86,
+      "p50": 19,
+      "p95": 24,
+      "p99": 24
     },
     "POST /checkout": {
-      "requests": 25,
+      "requests": 26,
       "failures": 0,
-      "rps": 14.89,
-      "p50": 43,
+      "rps": 15.66,
+      "p50": 45,
       "p95": 61,
-      "p99": 65
+      "p99": 62
     },
     "GET /products": {
-      "requests": 2,
+      "requests": 3,
       "failures": 0,
-      "rps": 1.19,
-      "p50": 17,
-      "p95": 17,
-      "p99": 17
+      "rps": 1.81,
+      "p50": 10,
+      "p95": 15,
+      "p99": 15
     }
   },
   "metadata": {
     "seed": 42,
     "target_host": "http://127.0.0.1:8006",
     "mode": "synthetic_simulation",
-    "timestamp_start": "2026-11-12T11:01:03.223224+00:00",
-    "timestamp_end": "2026-11-12T11:01:04.901776+00:00"
+    "timestamp_start": "2026-11-12T15:53:37.764278+00:00",
+    "timestamp_end": "2026-11-12T15:53:39.424599+00:00"
   }
 }

@@ -1,0 +1,2077 @@
+{
+  "task": "14D",
+  "model_note": "All runs are simulated: queuing model from simulate_system_metrics with a per-request serial+parallel CPU service model, a working-set memory model with OOM restarts, and a CFS throttling model. Not a hardware measurement.",
+  "design": {
+    "cells": 720,
+    "runs": 1440,
+    "rows": 43380,
+    "repeats": 2,
+    "heldout_cells": 144
+  },
+  "tested_region": {
+    "cpu_limit_cores": [
+      0.5,
+      1.0,
+      2.0
+    ],
+    "memory_limit_mib": [
+      512,
+      1024,
+      2048
+    ],
+    "checkout_replicas": [
+      2,
+      4
+    ],
+    "db_pool_sizes": [
+      50,
+      100
+    ],
+    "cache_enabled": [
+      true,
+      false
+    ],
+    "target_rps": [
+      150,
+      1000
+    ],
+    "rps_levels": [
+      150,
+      250,
+      350,
+      425,
+      475,
+      500,
+      550,
+      650,
+      800,
+      1000
+    ],
+    "workload": "flash_sale request mix, constant offered load",
+    "duration_seconds": 30,
+    "repeats": 2
+  },
+  "capacity_fit": {
+    "estimable": true,
+    "model": "log(mu) = log(mu_0) + alpha*log(cpu_cores) + memory offsets",
+    "n_runs": 642,
+    "alpha": 0.7331,
+    "alpha_se": 0.0028,
+    "alpha_ci95": [
+      0.7277,
+      0.7386
+    ],
+    "alpha_ci95_cluster_bootstrap": [
+      0.6948,
+      0.7741
+    ],
+    "mu0_rps_at_1_core": 119.22,
+    "memory_offsets_log": {
+      "mem_512Mi": {
+        "coef": -0.0468,
+        "ci95": [
+          -0.0604,
+          -0.0333
+        ]
+      },
+      "mem_1024Mi": {
+        "coef": -0.1311,
+        "ci95": [
+          -0.1371,
+          -0.125
+        ]
+      }
+    },
+    "r2": 0.9913,
+    "linear_scaling_test": {
+      "h0": "alpha = 1",
+      "t_stat": -96.76,
+      "dof": 638,
+      "p_value": 0.0,
+      "rejected_at_5pct": true
+    },
+    "reference_memory_fit": {
+      "alpha": 0.7557,
+      "ci95": [
+        0.7514,
+        0.7599
+      ],
+      "mu0_rps_at_1_core": 119.71,
+      "n": 304
+    },
+    "local_slopes": [
+      {
+        "from_cores": 0.5,
+        "to_cores": 1.0,
+        "slope": 0.8106
+      },
+      {
+        "from_cores": 1.0,
+        "to_cores": 2.0,
+        "slope": 0.6837
+      }
+    ],
+    "capacity_by_cpu": {
+      "0.5": 66.71,
+      "1.0": 115.39,
+      "2.0": 182.66
+    },
+    "generating_model": {
+      "form": "mu(s) = 1 / (T_SERIAL + T_PARALLEL / s)",
+      "T_SERIAL_s": 0.002,
+      "T_PARALLEL_core_s": 0.006143,
+      "true_capacity_by_cpu": {
+        "0.5": 70.0,
+        "1.0": 122.81,
+        "2.0": 197.18
+      },
+      "true_least_squares_alpha": 0.7471
+    }
+  },
+  "constraints": [
+    {
+      "constraint_id": "C01",
+      "source": "learned",
+      "rule": "target_rps > 487.50 and cache_enabled <= 0.50",
+      "variables": [
+        "target_rps",
+        "cache_enabled"
+      ],
+      "classification": "shifted",
+      "baseline_static_precision": 1.0,
+      "steady": {
+        "phase": "steady",
+        "n_rows": 6411,
+        "support": 1350,
+        "tp": 1134,
+        "fp": 216,
+        "fn": 2685,
+        "tn": 2376,
+        "precision": 0.84,
+        "recall": 0.2969,
+        "f1": 0.4388,
+        "accuracy": 0.5475,
+        "mean_p95_when_matched": 937.07,
+        "mean_p95_when_unmatched": 567.37
+      },
+      "transition": {
+        "phase": "transition",
+        "n_rows": 2229,
+        "support": 810,
+        "tp": 786,
+        "fp": 24,
+        "fn": 1155,
+        "tn": 264,
+        "precision": 0.9704,
+        "recall": 0.4049,
+        "f1": 0.5714,
+        "accuracy": 0.4711,
+        "mean_p95_when_matched": 6846.75,
+        "mean_p95_when_unmatched": 5180.13
+      },
+      "bound": {
+        "statistic": "target_rps",
+        "comparator": ">",
+        "old_bound": 487.5,
+        "new_bound": 350.0,
+        "ci_low": 350.0,
+        "ci_high": 350.0,
+        "f1": 0.8222,
+        "precision": 0.8016,
+        "recall": 0.844,
+        "rows_used": 12399,
+        "estimable": true,
+        "note": "context clauses used as filter"
+      },
+      "bounds_by_cpu": {
+        "0.5": {
+          "bound": {
+            "statistic": "target_rps",
+            "comparator": ">",
+            "old_bound": 487.5,
+            "new_bound": 150.0,
+            "ci_low": 150.0,
+            "ci_high": 150.0,
+            "f1": 0.938,
+            "precision": 0.9627,
+            "recall": 0.9144,
+            "rows_used": 3428,
+            "estimable": true,
+            "note": "context clauses used as filter"
+          },
+          "steady_precision": 1.0,
+          "steady_recall": 0.3154,
+          "steady_support": 540
+        },
+        "1": {
+          "bound": {
+            "statistic": "target_rps",
+            "comparator": ">",
+            "old_bound": 487.5,
+            "new_bound": 150.0,
+            "ci_low": 150.0,
+            "ci_high": 425.0,
+            "f1": 0.8743,
+            "precision": 0.7767,
+            "recall": 1.0,
+            "rows_used": 4464,
+            "estimable": true,
+            "note": "context clauses used as filter"
+          },
+          "steady_precision": 1.0,
+          "steady_recall": 0.2498,
+          "steady_support": 324
+        },
+        "2": {
+          "bound": {
+            "statistic": "target_rps",
+            "comparator": ">",
+            "old_bound": 487.5,
+            "new_bound": 350.0,
+            "ci_low": 350.0,
+            "ci_high": 350.0,
+            "f1": 0.7157,
+            "precision": 0.5572,
+            "recall": 1.0,
+            "rows_used": 4507,
+            "estimable": true,
+            "note": "context clauses used as filter"
+          },
+          "steady_precision": 0.5556,
+          "steady_recall": 0.3333,
+          "steady_support": 486
+        }
+      },
+      "class_by_cpu": {
+        "0.5": "shifted",
+        "1": "shifted",
+        "2": "shifted"
+      },
+      "evidence": "new bound 350 with 95% CI [350, 350] excludes old 488 (28% shift).",
+      "boundary_probe": null,
+      "notes": ""
+    },
+    {
+      "constraint_id": "C02",
+      "source": "learned",
+      "rule": "0.00093 * target_rps - 0.00666 * checkout_replicas + +0.00157 * db_pool_size - 0.15622 * cache_enabled >= 0.4311",
+      "variables": [
+        "target_rps",
+        "checkout_replicas",
+        "db_pool_size",
+        "cache_enabled"
+      ],
+      "classification": "shifted",
+      "baseline_static_precision": 0.6,
+      "steady": {
+        "phase": "steady",
+        "n_rows": 6411,
+        "support": 3565,
+        "tp": 2971,
+        "fp": 594,
+        "fn": 848,
+        "tn": 1998,
+        "precision": 0.8334,
+        "recall": 0.778,
+        "f1": 0.8047,
+        "accuracy": 0.7751,
+        "mean_p95_when_matched": 855.57,
+        "mean_p95_when_unmatched": 381.73
+      },
+      "transition": {
+        "phase": "transition",
+        "n_rows": 2229,
+        "support": 1655,
+        "tp": 1589,
+        "fp": 66,
+        "fn": 352,
+        "tn": 222,
+        "precision": 0.9601,
+        "recall": 0.8187,
+        "f1": 0.8838,
+        "accuracy": 0.8125,
+        "mean_p95_when_matched": 6463.73,
+        "mean_p95_when_unmatched": 3831.01
+      },
+      "bound": {
+        "statistic": "score",
+        "comparator": ">",
+        "old_bound": 0.4311,
+        "new_bound": 0.2996,
+        "ci_low": 0.2996,
+        "ci_high": 0.2996,
+        "f1": 0.8218,
+        "precision": 0.7583,
+        "recall": 0.897,
+        "rows_used": 24558,
+        "estimable": true,
+        "note": "bound is on the rule's linear score, not a single variable"
+      },
+      "bounds_by_cpu": {
+        "0.5": {
+          "bound": {
+            "statistic": "score",
+            "comparator": ">",
+            "old_bound": 0.4311,
+            "new_bound": 0.1914,
+            "ci_low": 0.0351,
+            "ci_high": 0.1914,
+            "f1": 0.9495,
+            "precision": 0.9489,
+            "recall": 0.9501,
+            "rows_used": 7140,
+            "estimable": true,
+            "note": "bound is on the rule's linear score, not a single variable"
+          },
+          "steady_precision": 1.0,
+          "steady_recall": 0.6308,
+          "steady_support": 1080
+        },
+        "1": {
+          "bound": {
+            "statistic": "score",
+            "comparator": ">",
+            "old_bound": 0.4311,
+            "new_bound": 0.2909,
+            "ci_low": 0.2909,
+            "ci_high": 0.2909,
+            "f1": 0.8919,
+            "precision": 0.8445,
+            "recall": 0.945,
+            "rows_used": 8595,
+            "estimable": true,
+            "note": "bound is on the rule's linear score, not a single variable"
+          },
+          "steady_precision": 0.9546,
+          "steady_recall": 0.8751,
+          "steady_support": 1189
+        },
+        "2": {
+          "bound": {
+            "statistic": "score",
+            "comparator": ">",
+            "old_bound": 0.4311,
+            "new_bound": 0.4936,
+            "ci_low": 0.4936,
+            "ci_high": 0.4936,
+            "f1": 0.7143,
+            "precision": 0.6614,
+            "recall": 0.7764,
+            "rows_used": 8823,
+            "estimable": true,
+            "note": "bound is on the rule's linear score, not a single variable"
+          },
+          "steady_precision": 0.5833,
+          "steady_recall": 0.9333,
+          "steady_support": 1296
+        }
+      },
+      "class_by_cpu": {
+        "0.5": "shifted",
+        "1": "shifted",
+        "2": "shifted"
+      },
+      "evidence": "new bound 0.3 with 95% CI [0.3, 0.3] excludes old 0.431 (30% shift).",
+      "boundary_probe": null,
+      "notes": ""
+    },
+    {
+      "constraint_id": "C03",
+      "source": "learned",
+      "rule": "0.00087 * target_rps - 0.01911 * checkout_replicas + +0.00167 * db_pool_size - 0.37137 * cache_enabled >= 0.2423",
+      "variables": [
+        "target_rps",
+        "checkout_replicas",
+        "db_pool_size",
+        "cache_enabled"
+      ],
+      "classification": "shifted",
+      "baseline_static_precision": 0.5833,
+      "steady": {
+        "phase": "steady",
+        "n_rows": 6411,
+        "support": 3286,
+        "tp": 2584,
+        "fp": 702,
+        "fn": 1235,
+        "tn": 1890,
+        "precision": 0.7864,
+        "recall": 0.6766,
+        "f1": 0.7274,
+        "accuracy": 0.6979,
+        "mean_p95_when_matched": 847.26,
+        "mean_p95_when_unmatched": 432.77
+      },
+      "transition": {
+        "phase": "transition",
+        "n_rows": 2229,
+        "support": 1634,
+        "tp": 1556,
+        "fp": 78,
+        "fn": 385,
+        "tn": 210,
+        "precision": 0.9523,
+        "recall": 0.8016,
+        "f1": 0.8705,
+        "accuracy": 0.7923,
+        "mean_p95_when_matched": 6568.32,
+        "mean_p95_when_unmatched": 3636.71
+      },
+      "bound": {
+        "statistic": "score",
+        "comparator": ">",
+        "old_bound": 0.2423,
+        "new_bound": -0.0598,
+        "ci_low": -0.0598,
+        "ci_high": -0.0598,
+        "f1": 0.8029,
+        "precision": 0.686,
+        "recall": 0.9677,
+        "rows_used": 24558,
+        "estimable": true,
+        "note": "bound is on the rule's linear score, not a single variable"
+      },
+      "bounds_by_cpu": {
+        "0.5": {
+          "bound": {
+            "statistic": "score",
+            "comparator": ">",
+            "old_bound": 0.2423,
+            "new_bound": -0.1468,
+            "ci_low": -0.1468,
+            "ci_high": -0.1468,
+            "f1": 0.9507,
+            "precision": 0.927,
+            "recall": 0.9757,
+            "rows_used": 7140,
+            "estimable": true,
+            "note": "bound is on the rule's linear score, not a single variable"
+          },
+          "steady_precision": 0.9542,
+          "steady_recall": 0.6571,
+          "steady_support": 1179
+        },
+        "1": {
+          "bound": {
+            "statistic": "score",
+            "comparator": ">",
+            "old_bound": 0.2423,
+            "new_bound": -0.0598,
+            "ci_low": -0.0598,
+            "ci_high": 0.0237,
+            "f1": 0.8573,
+            "precision": 0.7555,
+            "recall": 0.9908,
+            "rows_used": 8595,
+            "estimable": true,
+            "note": "bound is on the rule's linear score, not a single variable"
+          },
+          "steady_precision": 0.9376,
+          "steady_recall": 0.6253,
+          "steady_support": 865
+        },
+        "2": {
+          "bound": {
+            "statistic": "score",
+            "comparator": ">",
+            "old_bound": 0.2423,
+            "new_bound": 0.3116,
+            "ci_low": 0.3116,
+            "ci_high": 0.3951,
+            "f1": 0.6507,
+            "precision": 0.5771,
+            "recall": 0.7458,
+            "rows_used": 8823,
+            "estimable": true,
+            "note": "bound is on the rule's linear score, not a single variable"
+          },
+          "steady_precision": 0.5217,
+          "steady_recall": 0.8,
+          "steady_support": 1242
+        }
+      },
+      "class_by_cpu": {
+        "0.5": "shifted",
+        "1": "shifted",
+        "2": "shifted"
+      },
+      "evidence": "new bound -0.0598 with 95% CI [-0.0598, -0.0598] excludes old 0.242 (125% shift).",
+      "boundary_probe": null,
+      "notes": ""
+    },
+    {
+      "constraint_id": "C04",
+      "source": "learned",
+      "rule": "0.00089 * target_rps - 0.01413 * checkout_replicas + +0.00163 * db_pool_size - 0.28531 * cache_enabled >= 0.3178",
+      "variables": [
+        "target_rps",
+        "checkout_replicas",
+        "db_pool_size",
+        "cache_enabled"
+      ],
+      "classification": "shifted",
+      "baseline_static_precision": 0.5833,
+      "steady": {
+        "phase": "steady",
+        "n_rows": 6411,
+        "support": 3349,
+        "tp": 2647,
+        "fp": 702,
+        "fn": 1172,
+        "tn": 1890,
+        "precision": 0.7904,
+        "recall": 0.6931,
+        "f1": 0.7386,
+        "accuracy": 0.7077,
+        "mean_p95_when_matched": 840.48,
+        "mean_p95_when_unmatched": 431.67
+      },
+      "transition": {
+        "phase": "transition",
+        "n_rows": 2229,
+        "support": 1631,
+        "tp": 1553,
+        "fp": 78,
+        "fn": 388,
+        "tn": 210,
+        "precision": 0.9522,
+        "recall": 0.8001,
+        "f1": 0.8695,
+        "accuracy": 0.7909,
+        "mean_p95_when_matched": 6542.82,
+        "mean_p95_when_unmatched": 3720.94
+      },
+      "bound": {
+        "statistic": "score",
+        "comparator": ">",
+        "old_bound": 0.3178,
+        "new_bound": 0.0512,
+        "ci_low": 0.0512,
+        "ci_high": 0.0512,
+        "f1": 0.8029,
+        "precision": 0.686,
+        "recall": 0.9677,
+        "rows_used": 24558,
+        "estimable": true,
+        "note": "bound is on the rule's linear score, not a single variable"
+      },
+      "bounds_by_cpu": {
+        "0.5": {
+          "bound": {
+            "statistic": "score",
+            "comparator": ">",
+            "old_bound": 0.3178,
+            "new_bound": -0.0378,
+            "ci_low": -0.0378,
+            "ci_high": -0.0378,
+            "f1": 0.9507,
+            "precision": 0.927,
+            "recall": 0.9757,
+            "rows_used": 7140,
+            "estimable": true,
+            "note": "bound is on the rule's linear score, not a single variable"
+          },
+          "steady_precision": 0.95,
+          "steady_recall": 0.5993,
+          "steady_support": 1080
+        },
+        "1": {
+          "bound": {
+            "statistic": "score",
+            "comparator": ">",
+            "old_bound": 0.3178,
+            "new_bound": 0.0512,
+            "ci_low": 0.0512,
+            "ci_high": 0.1585,
+            "f1": 0.8573,
+            "precision": 0.7555,
+            "recall": 0.9908,
+            "rows_used": 8595,
+            "estimable": true,
+            "note": "bound is on the rule's linear score, not a single variable"
+          },
+          "steady_precision": 0.9474,
+          "steady_recall": 0.7502,
+          "steady_support": 1027
+        },
+        "2": {
+          "bound": {
+            "statistic": "score",
+            "comparator": ">",
+            "old_bound": 0.3178,
+            "new_bound": 0.418,
+            "ci_low": 0.418,
+            "ci_high": 0.418,
+            "f1": 0.696,
+            "precision": 0.6524,
+            "recall": 0.7458,
+            "rows_used": 8823,
+            "estimable": true,
+            "note": "bound is on the rule's linear score, not a single variable"
+          },
+          "steady_precision": 0.5217,
+          "steady_recall": 0.8,
+          "steady_support": 1242
+        }
+      },
+      "class_by_cpu": {
+        "0.5": "shifted",
+        "1": "shifted",
+        "2": "shifted"
+      },
+      "evidence": "new bound 0.0512 with 95% CI [0.0512, 0.0512] excludes old 0.318 (84% shift).",
+      "boundary_probe": null,
+      "notes": ""
+    },
+    {
+      "constraint_id": "C05",
+      "source": "learned",
+      "rule": "0.00097 * target_rps + +0.00150 * db_pool_size >= 0.5540",
+      "variables": [
+        "target_rps",
+        "db_pool_size"
+      ],
+      "classification": "shifted",
+      "baseline_static_precision": 0.5833,
+      "steady": {
+        "phase": "steady",
+        "n_rows": 6411,
+        "support": 3349,
+        "tp": 2755,
+        "fp": 594,
+        "fn": 1064,
+        "tn": 1998,
+        "precision": 0.8226,
+        "recall": 0.7214,
+        "f1": 0.7687,
+        "accuracy": 0.7414,
+        "mean_p95_when_matched": 834.09,
+        "mean_p95_when_unmatched": 438.65
+      },
+      "transition": {
+        "phase": "transition",
+        "n_rows": 2229,
+        "support": 1691,
+        "tp": 1625,
+        "fp": 66,
+        "fn": 316,
+        "tn": 222,
+        "precision": 0.961,
+        "recall": 0.8372,
+        "f1": 0.8948,
+        "accuracy": 0.8286,
+        "mean_p95_when_matched": 6608.14,
+        "mean_p95_when_unmatched": 3200.93
+      },
+      "bound": {
+        "statistic": "score",
+        "comparator": ">",
+        "old_bound": 0.554,
+        "new_bound": 0.3175,
+        "ci_low": 0.3175,
+        "ci_high": 0.3925,
+        "f1": 0.8179,
+        "precision": 0.7208,
+        "recall": 0.9453,
+        "rows_used": 24558,
+        "estimable": true,
+        "note": "bound is on the rule's linear score, not a single variable"
+      },
+      "bounds_by_cpu": {
+        "0.5": {
+          "bound": {
+            "statistic": "score",
+            "comparator": ">",
+            "old_bound": 0.554,
+            "new_bound": 0.2205,
+            "ci_low": 0.2205,
+            "ci_high": 0.2955,
+            "f1": 0.9343,
+            "precision": 0.9177,
+            "recall": 0.9515,
+            "rows_used": 7140,
+            "estimable": true,
+            "note": "bound is on the rule's linear score, not a single variable"
+          },
+          "steady_precision": 1.0,
+          "steady_recall": 0.5993,
+          "steady_support": 1026
+        },
+        "1": {
+          "bound": {
+            "statistic": "score",
+            "comparator": ">",
+            "old_bound": 0.554,
+            "new_bound": 0.2955,
+            "ci_low": 0.2955,
+            "ci_high": 0.4895,
+            "f1": 0.8827,
+            "precision": 0.7901,
+            "recall": 1.0,
+            "rows_used": 8595,
+            "estimable": true,
+            "note": "bound is on the rule's linear score, not a single variable"
+          },
+          "steady_precision": 0.8948,
+          "steady_recall": 0.7086,
+          "steady_support": 1027
+        },
+        "2": {
+          "bound": {
+            "statistic": "score",
+            "comparator": ">",
+            "old_bound": 0.554,
+            "new_bound": 0.4895,
+            "ci_low": 0.4895,
+            "ci_high": 0.4895,
+            "f1": 0.6947,
+            "precision": 0.5549,
+            "recall": 0.9289,
+            "rows_used": 8823,
+            "estimable": true,
+            "note": "bound is on the rule's linear score, not a single variable"
+          },
+          "steady_precision": 0.625,
+          "steady_recall": 1.0,
+          "steady_support": 1296
+        }
+      },
+      "class_by_cpu": {
+        "0.5": "shifted",
+        "1": "shifted",
+        "2": "shifted"
+      },
+      "evidence": "new bound 0.318 with 95% CI [0.318, 0.393] excludes old 0.554 (43% shift).",
+      "boundary_probe": null,
+      "notes": ""
+    },
+    {
+      "constraint_id": "C06",
+      "source": "learned",
+      "rule": "0.00097 * target_rps + +0.00144 * db_pool_size >= 0.5506",
+      "variables": [
+        "target_rps",
+        "db_pool_size"
+      ],
+      "classification": "shifted",
+      "baseline_static_precision": 0.5833,
+      "steady": {
+        "phase": "steady",
+        "n_rows": 6411,
+        "support": 3349,
+        "tp": 2755,
+        "fp": 594,
+        "fn": 1064,
+        "tn": 1998,
+        "precision": 0.8226,
+        "recall": 0.7214,
+        "f1": 0.7687,
+        "accuracy": 0.7414,
+        "mean_p95_when_matched": 834.09,
+        "mean_p95_when_unmatched": 438.65
+      },
+      "transition": {
+        "phase": "transition",
+        "n_rows": 2229,
+        "support": 1691,
+        "tp": 1625,
+        "fp": 66,
+        "fn": 316,
+        "tn": 222,
+        "precision": 0.961,
+        "recall": 0.8372,
+        "f1": 0.8948,
+        "accuracy": 0.8286,
+        "mean_p95_when_matched": 6608.14,
+        "mean_p95_when_unmatched": 3200.93
+      },
+      "bound": {
+        "statistic": "score",
+        "comparator": ">",
+        "old_bound": 0.5506,
+        "new_bound": 0.4835,
+        "ci_low": 0.4835,
+        "ci_high": 0.4835,
+        "f1": 0.8214,
+        "precision": 0.8011,
+        "recall": 0.8428,
+        "rows_used": 24558,
+        "estimable": true,
+        "note": "bound is on the rule's linear score, not a single variable"
+      },
+      "bounds_by_cpu": {
+        "0.5": {
+          "bound": {
+            "statistic": "score",
+            "comparator": ">",
+            "old_bound": 0.5506,
+            "new_bound": 0.2175,
+            "ci_low": 0.2175,
+            "ci_high": 0.2895,
+            "f1": 0.9343,
+            "precision": 0.9177,
+            "recall": 0.9515,
+            "rows_used": 7140,
+            "estimable": true,
+            "note": "bound is on the rule's linear score, not a single variable"
+          },
+          "steady_precision": 1.0,
+          "steady_recall": 0.5993,
+          "steady_support": 1026
+        },
+        "1": {
+          "bound": {
+            "statistic": "score",
+            "comparator": ">",
+            "old_bound": 0.5506,
+            "new_bound": 0.2895,
+            "ci_low": 0.2895,
+            "ci_high": 0.4843,
+            "f1": 0.8827,
+            "precision": 0.7901,
+            "recall": 1.0,
+            "rows_used": 8595,
+            "estimable": true,
+            "note": "bound is on the rule's linear score, not a single variable"
+          },
+          "steady_precision": 0.8948,
+          "steady_recall": 0.7086,
+          "steady_support": 1027
+        },
+        "2": {
+          "bound": {
+            "statistic": "score",
+            "comparator": ">",
+            "old_bound": 0.5506,
+            "new_bound": 0.4835,
+            "ci_low": 0.4835,
+            "ci_high": 0.4835,
+            "f1": 0.7072,
+            "precision": 0.5471,
+            "recall": 1.0,
+            "rows_used": 8823,
+            "estimable": true,
+            "note": "bound is on the rule's linear score, not a single variable"
+          },
+          "steady_precision": 0.625,
+          "steady_recall": 1.0,
+          "steady_support": 1296
+        }
+      },
+      "class_by_cpu": {
+        "0.5": "shifted",
+        "1": "shifted",
+        "2": "shifted"
+      },
+      "evidence": "new bound 0.484 with 95% CI [0.484, 0.484] excludes old 0.551 (12% shift).",
+      "boundary_probe": null,
+      "notes": ""
+    },
+    {
+      "constraint_id": "C07",
+      "source": "learned",
+      "rule": "target_rps > 487.50 and cache_enabled > 0.50 and db_pool_size > 22.50 and target_rps <= 862.50",
+      "variables": [
+        "target_rps",
+        "cache_enabled",
+        "db_pool_size"
+      ],
+      "classification": "shifted",
+      "baseline_static_precision": 0.3333,
+      "steady": {
+        "phase": "steady",
+        "n_rows": 6411,
+        "support": 1405,
+        "tp": 1189,
+        "fp": 216,
+        "fn": 2630,
+        "tn": 2376,
+        "precision": 0.8463,
+        "recall": 0.3113,
+        "f1": 0.4552,
+        "accuracy": 0.5561,
+        "mean_p95_when_matched": 763.39,
+        "mean_p95_when_unmatched": 612.06
+      },
+      "transition": {
+        "phase": "transition",
+        "n_rows": 2229,
+        "support": 575,
+        "tp": 551,
+        "fp": 24,
+        "fn": 1390,
+        "tn": 264,
+        "precision": 0.9583,
+        "recall": 0.2839,
+        "f1": 0.438,
+        "accuracy": 0.3656,
+        "mean_p95_when_matched": 6289.33,
+        "mean_p95_when_unmatched": 5610.7
+      },
+      "bound": {
+        "statistic": "target_rps",
+        "comparator": ">",
+        "old_bound": 487.5,
+        "new_bound": 250.0,
+        "ci_low": 250.0,
+        "ci_high": 350.0,
+        "f1": 0.7923,
+        "precision": 0.7057,
+        "recall": 0.903,
+        "rows_used": 11025,
+        "estimable": true,
+        "note": "context clauses used as filter"
+      },
+      "bounds_by_cpu": {
+        "0.5": {
+          "bound": {
+            "statistic": "target_rps",
+            "comparator": ">",
+            "old_bound": 487.5,
+            "new_bound": 250.0,
+            "ci_low": 150.0,
+            "ci_high": 250.0,
+            "f1": 0.9196,
+            "precision": 1.0,
+            "recall": 0.8511,
+            "rows_used": 3280,
+            "estimable": true,
+            "note": "context clauses used as filter"
+          },
+          "steady_precision": 1.0,
+          "steady_recall": 0.1893,
+          "steady_support": 324
+        },
+        "1": {
+          "bound": {
+            "statistic": "target_rps",
+            "comparator": ">",
+            "old_bound": 487.5,
+            "new_bound": 150.0,
+            "ci_low": 150.0,
+            "ci_high": 150.0,
+            "f1": 0.8774,
+            "precision": 0.7815,
+            "recall": 1.0,
+            "rows_used": 3753,
+            "estimable": true,
+            "note": "context clauses used as filter"
+          },
+          "steady_precision": 1.0,
+          "steady_recall": 0.3755,
+          "steady_support": 487
+        },
+        "2": {
+          "bound": {
+            "statistic": "target_rps",
+            "comparator": ">",
+            "old_bound": 487.5,
+            "new_bound": 350.0,
+            "ci_low": 350.0,
+            "ci_high": 350.0,
+            "f1": 0.6472,
+            "precision": 0.4784,
+            "recall": 1.0,
+            "rows_used": 3992,
+            "estimable": true,
+            "note": "context clauses used as filter"
+          },
+          "steady_precision": 0.6364,
+          "steady_recall": 0.4667,
+          "steady_support": 594
+        }
+      },
+      "class_by_cpu": {
+        "0.5": "shifted",
+        "1": "shifted",
+        "2": "shifted"
+      },
+      "evidence": "new bound 250 with 95% CI [250, 350] excludes old 488 (49% shift).",
+      "boundary_probe": null,
+      "notes": ""
+    },
+    {
+      "constraint_id": "C08",
+      "source": "learned",
+      "rule": "target_rps > 487.50 and cache_enabled > 0.50 and db_pool_size > 22.50",
+      "variables": [
+        "target_rps",
+        "cache_enabled",
+        "db_pool_size"
+      ],
+      "classification": "shifted",
+      "baseline_static_precision": 0.2857,
+      "steady": {
+        "phase": "steady",
+        "n_rows": 6411,
+        "support": 1567,
+        "tp": 1351,
+        "fp": 216,
+        "fn": 2468,
+        "tn": 2376,
+        "precision": 0.8622,
+        "recall": 0.3538,
+        "f1": 0.5017,
+        "accuracy": 0.5813,
+        "mean_p95_when_matched": 771.33,
+        "mean_p95_when_unmatched": 604.43
+      },
+      "transition": {
+        "phase": "transition",
+        "n_rows": 2229,
+        "support": 833,
+        "tp": 809,
+        "fp": 24,
+        "fn": 1132,
+        "tn": 264,
+        "precision": 0.9712,
+        "recall": 0.4168,
+        "f1": 0.5833,
+        "accuracy": 0.4814,
+        "mean_p95_when_matched": 6714.39,
+        "mean_p95_when_unmatched": 5231.65
+      },
+      "bound": {
+        "statistic": "target_rps",
+        "comparator": ">",
+        "old_bound": 487.5,
+        "new_bound": 350.0,
+        "ci_low": 250.0,
+        "ci_high": 350.0,
+        "f1": 0.8207,
+        "precision": 0.8007,
+        "recall": 0.8417,
+        "rows_used": 12159,
+        "estimable": true,
+        "note": "context clauses used as filter"
+      },
+      "bounds_by_cpu": {
+        "0.5": {
+          "bound": {
+            "statistic": "target_rps",
+            "comparator": ">",
+            "old_bound": 487.5,
+            "new_bound": 250.0,
+            "ci_low": 150.0,
+            "ci_high": 250.0,
+            "f1": 0.9309,
+            "precision": 1.0,
+            "recall": 0.8707,
+            "rows_used": 3712,
+            "estimable": true,
+            "note": "context clauses used as filter"
+          },
+          "steady_precision": 1.0,
+          "steady_recall": 0.1893,
+          "steady_support": 324
+        },
+        "1": {
+          "bound": {
+            "statistic": "target_rps",
+            "comparator": ">",
+            "old_bound": 487.5,
+            "new_bound": 150.0,
+            "ci_low": 150.0,
+            "ci_high": 150.0,
+            "f1": 0.8917,
+            "precision": 0.8045,
+            "recall": 1.0,
+            "rows_used": 4131,
+            "estimable": true,
+            "note": "context clauses used as filter"
+          },
+          "steady_precision": 1.0,
+          "steady_recall": 0.4171,
+          "steady_support": 541
+        },
+        "2": {
+          "bound": {
+            "statistic": "target_rps",
+            "comparator": ">",
+            "old_bound": 487.5,
+            "new_bound": 350.0,
+            "ci_low": 350.0,
+            "ci_high": 350.0,
+            "f1": 0.6983,
+            "precision": 0.5364,
+            "recall": 1.0,
+            "rows_used": 4316,
+            "estimable": true,
+            "note": "context clauses used as filter"
+          },
+          "steady_precision": 0.6923,
+          "steady_recall": 0.6,
+          "steady_support": 702
+        }
+      },
+      "class_by_cpu": {
+        "0.5": "shifted",
+        "1": "shifted",
+        "2": "shifted"
+      },
+      "evidence": "new bound 350 with 95% CI [250, 350] excludes old 488 (28% shift).",
+      "boundary_probe": null,
+      "notes": ""
+    },
+    {
+      "constraint_id": "C09",
+      "source": "learned",
+      "rule": "target_rps <= 487.50 and cache_enabled <= 0.50 and checkout_replicas <= 3.50",
+      "variables": [
+        "target_rps",
+        "cache_enabled",
+        "checkout_replicas"
+      ],
+      "classification": "shifted",
+      "baseline_static_precision": 0.0,
+      "steady": {
+        "phase": "steady",
+        "n_rows": 6411,
+        "support": 855,
+        "tp": 531,
+        "fp": 324,
+        "fn": 3288,
+        "tn": 2268,
+        "precision": 0.6211,
+        "recall": 0.139,
+        "f1": 0.2272,
+        "accuracy": 0.4366,
+        "mean_p95_when_matched": 746.98,
+        "mean_p95_when_unmatched": 629.56
+      },
+      "transition": {
+        "phase": "transition",
+        "n_rows": 2229,
+        "support": 165,
+        "tp": 129,
+        "fp": 36,
+        "fn": 1812,
+        "tn": 252,
+        "precision": 0.7818,
+        "recall": 0.0665,
+        "f1": 0.1225,
+        "accuracy": 0.1709,
+        "mean_p95_when_matched": 3811.52,
+        "mean_p95_when_unmatched": 5943.59
+      },
+      "bound": {
+        "statistic": "target_rps",
+        "comparator": "<",
+        "old_bound": 487.5,
+        "new_bound": 1000.0,
+        "ci_low": 1000.0,
+        "ci_high": 1000.0,
+        "f1": 0.8381,
+        "precision": 0.8066,
+        "recall": 0.8722,
+        "rows_used": 5619,
+        "estimable": true,
+        "note": "context clauses used as filter"
+      },
+      "bounds_by_cpu": {
+        "0.5": {
+          "bound": {
+            "statistic": "target_rps",
+            "comparator": "<",
+            "old_bound": 487.5,
+            "new_bound": null,
+            "ci_low": null,
+            "ci_high": null,
+            "f1": 0.0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "rows_used": 1665,
+            "estimable": false,
+            "note": "all rows are SLO violations (boundary is below the tested region)"
+          },
+          "steady_precision": 1.0,
+          "steady_recall": 0.1525,
+          "steady_support": 261
+        },
+        "1": {
+          "bound": {
+            "statistic": "target_rps",
+            "comparator": "<",
+            "old_bound": 487.5,
+            "new_bound": 1000.0,
+            "ci_low": 1000.0,
+            "ci_high": 1000.0,
+            "f1": 0.8438,
+            "precision": 0.8182,
+            "recall": 0.871,
+            "rows_used": 1998,
+            "estimable": true,
+            "note": "context clauses used as filter"
+          },
+          "steady_precision": 1.0,
+          "steady_recall": 0.1665,
+          "steady_support": 216
+        },
+        "2": {
+          "bound": {
+            "statistic": "target_rps",
+            "comparator": "<",
+            "old_bound": 487.5,
+            "new_bound": 1000.0,
+            "ci_low": 1000.0,
+            "ci_high": 1000.0,
+            "f1": 0.7165,
+            "precision": 0.6276,
+            "recall": 0.8349,
+            "rows_used": 1956,
+            "estimable": true,
+            "note": "context clauses used as filter"
+          },
+          "steady_precision": 0.1429,
+          "steady_recall": 0.0667,
+          "steady_support": 378
+        }
+      },
+      "class_by_cpu": {
+        "0.5": "unchanged",
+        "1": "shifted",
+        "2": "shifted"
+      },
+      "evidence": "new bound 1e+03 with 95% CI [1e+03, 1e+03] excludes old 488 (105% shift).",
+      "boundary_probe": null,
+      "notes": "Class depends on CPU limit: 0.5 cores=unchanged, 1 cores=shifted, 2 cores=shifted."
+    },
+    {
+      "constraint_id": "C10",
+      "source": "learned",
+      "rule": "target_rps <= 487.50 and cache_enabled <= 0.50 and checkout_replicas <= 3.50 and target_rps <= 287.50",
+      "variables": [
+        "target_rps",
+        "cache_enabled",
+        "checkout_replicas"
+      ],
+      "classification": "disappeared",
+      "baseline_static_precision": 0.0,
+      "steady": {
+        "phase": "steady",
+        "n_rows": 6541,
+        "support": 445,
+        "tp": 148,
+        "fp": 297,
+        "fn": 3720,
+        "tn": 2376,
+        "precision": 0.3326,
+        "recall": 0.0383,
+        "f1": 0.0686,
+        "accuracy": 0.3859,
+        "mean_p95_when_matched": 445.84,
+        "mean_p95_when_unmatched": 656.19
+      },
+      "transition": {
+        "phase": "transition",
+        "n_rows": 2279,
+        "support": 95,
+        "tp": 62,
+        "fp": 33,
+        "fn": 1920,
+        "tn": 264,
+        "precision": 0.6526,
+        "recall": 0.0313,
+        "f1": 0.0597,
+        "accuracy": 0.143,
+        "mean_p95_when_matched": 3299.95,
+        "mean_p95_when_unmatched": 5868.5
+      },
+      "bound": {
+        "statistic": "target_rps",
+        "comparator": "<",
+        "old_bound": 487.5,
+        "new_bound": 250.0,
+        "ci_low": 250.0,
+        "ci_high": 250.0,
+        "f1": 0.3277,
+        "precision": 0.304,
+        "recall": 0.3555,
+        "rows_used": 1633,
+        "estimable": true,
+        "note": "context clauses used as filter"
+      },
+      "bounds_by_cpu": {
+        "0.5": {
+          "bound": {
+            "statistic": "target_rps",
+            "comparator": "<",
+            "old_bound": 487.5,
+            "new_bound": null,
+            "ci_low": null,
+            "ci_high": null,
+            "f1": 0.0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "rows_used": 423,
+            "estimable": false,
+            "note": "all rows are SLO violations (boundary is below the tested region)"
+          },
+          "steady_precision": 1.0,
+          "steady_recall": 0.0578,
+          "steady_support": 99
+        },
+        "1": {
+          "bound": {
+            "statistic": "target_rps",
+            "comparator": "<",
+            "old_bound": 487.5,
+            "new_bound": null,
+            "ci_low": null,
+            "ci_high": null,
+            "f1": 0.0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "rows_used": 648,
+            "estimable": false,
+            "note": "all rows are SLO violations (boundary is below the tested region)"
+          },
+          "steady_precision": 0.0,
+          "steady_recall": 0.0,
+          "steady_support": 0
+        },
+        "2": {
+          "bound": {
+            "statistic": "target_rps",
+            "comparator": "<",
+            "old_bound": 487.5,
+            "new_bound": null,
+            "ci_low": null,
+            "ci_high": null,
+            "f1": 0.0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "rows_used": 432,
+            "estimable": false,
+            "note": "no observed SLO violations in these rows"
+          },
+          "steady_precision": 0.0,
+          "steady_recall": 0.0,
+          "steady_support": 216
+        }
+      },
+      "class_by_cpu": {
+        "0.5": "unchanged",
+        "1": "disappeared",
+        "2": "disappeared"
+      },
+      "evidence": "rule does not predict observed violations (precision 0.33, static 0.00)",
+      "boundary_probe": {
+        "experiments": 6,
+        "closest_point": {
+          "cpu_cores": 0.5,
+          "memory_mib": 512,
+          "checkout_replicas": 2,
+          "db_pool_size": 50,
+          "cache_enabled": false,
+          "target_rps": 150.0,
+          "normalised_distance_to_rule_region": 0.0,
+          "relative_gap_to_boundary": 0.0
+        },
+        "probe_configs": [
+          {
+            "cpu_cores": 0.5,
+            "memory_mib": 512.0,
+            "checkout_replicas": 2.0,
+            "db_pool_size": 50.0,
+            "cache_enabled": 0.0,
+            "target_rps": 150.0
+          },
+          {
+            "cpu_cores": 1.0,
+            "memory_mib": 512.0,
+            "checkout_replicas": 2.0,
+            "db_pool_size": 50.0,
+            "cache_enabled": 0.0,
+            "target_rps": 150.0
+          },
+          {
+            "cpu_cores": 2.0,
+            "memory_mib": 512.0,
+            "checkout_replicas": 2.0,
+            "db_pool_size": 50.0,
+            "cache_enabled": 0.0,
+            "target_rps": 150.0
+          },
+          {
+            "cpu_cores": 0.5,
+            "memory_mib": 512.0,
+            "checkout_replicas": 2.0,
+            "db_pool_size": 50.0,
+            "cache_enabled": 0.0,
+            "target_rps": 250.0
+          },
+          {
+            "cpu_cores": 1.0,
+            "memory_mib": 512.0,
+            "checkout_replicas": 2.0,
+            "db_pool_size": 50.0,
+            "cache_enabled": 0.0,
+            "target_rps": 250.0
+          },
+          {
+            "cpu_cores": 2.0,
+            "memory_mib": 512.0,
+            "checkout_replicas": 2.0,
+            "db_pool_size": 50.0,
+            "cache_enabled": 0.0,
+            "target_rps": 250.0
+          }
+        ],
+        "probe_support": 180,
+        "probe_precision": 0.5,
+        "probe_slo_violation_rate": 0.5,
+        "class_after_probe": "disappeared"
+      },
+      "notes": "Confirmed after 6 boundary probes; closest point tested: 150.0 rps, 2 replicas, pool 50, cache off, 0.5 cores / 512Mi (distance to rule region 0.0, gap to boundary 0.0). Tested region: {\"cpu_limit_cores\": [0.5, 1.0, 2.0], \"memory_limit_mib\": [512, 1024, 2048], \"checkout_replicas\": [2, 4], \"db_pool_sizes\": [50, 100], \"cache_enabled\": [true, false], \"target_rps\": [150, 1000], \"rps_levels\": [150, 250, 350, 425, 475, 500, 550, 650, 800, 1000], \"workload\": \"flash_sale request mix, constant offered load\", \"duration_seconds\": 30, \"repeats\": 2}. Class depends on CPU limit: 0.5 cores=unchanged, 1 cores=disappeared, 2 cores=disappeared."
+    },
+    {
+      "constraint_id": "K02",
+      "source": "mechanism",
+      "rule": "rps_per_replica > 60.71",
+      "variables": [
+        "target_rps",
+        "checkout_replicas"
+      ],
+      "classification": "shifted",
+      "baseline_static_precision": 0.5384615384615384,
+      "steady": {
+        "phase": "steady",
+        "n_rows": 6411,
+        "support": 5925,
+        "tp": 3819,
+        "fp": 2106,
+        "fn": 0,
+        "tn": 486,
+        "precision": 0.6446,
+        "recall": 1.0,
+        "f1": 0.7839,
+        "accuracy": 0.6715,
+        "mean_p95_when_matched": 692.73,
+        "mean_p95_when_unmatched": 66.07
+      },
+      "transition": {
+        "phase": "transition",
+        "n_rows": 2229,
+        "support": 2175,
+        "tp": 1941,
+        "fp": 234,
+        "fn": 0,
+        "tn": 54,
+        "precision": 0.8924,
+        "recall": 1.0,
+        "f1": 0.9431,
+        "accuracy": 0.895,
+        "mean_p95_when_matched": 5927.77,
+        "mean_p95_when_unmatched": 66.12
+      },
+      "bound": {
+        "statistic": "rps_per_replica",
+        "comparator": ">",
+        "old_bound": 60.71,
+        "new_bound": 106.25,
+        "ci_low": 106.25,
+        "ci_high": 106.25,
+        "f1": 0.8753,
+        "precision": 0.8306,
+        "recall": 0.925,
+        "rows_used": 12159,
+        "estimable": true,
+        "note": ""
+      },
+      "bounds_by_cpu": {
+        "0.5": {
+          "bound": {
+            "statistic": "rps_per_replica",
+            "comparator": ">",
+            "old_bound": 60.71,
+            "new_bound": 62.5,
+            "ci_low": 62.5,
+            "ci_high": 62.5,
+            "f1": 1.0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "rows_used": 3712,
+            "estimable": true,
+            "note": ""
+          },
+          "steady_precision": 0.8638,
+          "steady_recall": 1.0,
+          "steady_support": 1982
+        },
+        "1": {
+          "bound": {
+            "statistic": "rps_per_replica",
+            "comparator": ">",
+            "old_bound": 60.71,
+            "new_bound": 106.25,
+            "ci_low": 106.25,
+            "ci_high": 106.25,
+            "f1": 1.0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "rows_used": 4131,
+            "estimable": true,
+            "note": ""
+          },
+          "steady_precision": 0.7501,
+          "steady_recall": 1.0,
+          "steady_support": 1729
+        },
+        "2": {
+          "bound": {
+            "statistic": "rps_per_replica",
+            "comparator": ">",
+            "old_bound": 60.71,
+            "new_bound": 175.0,
+            "ci_low": 175.0,
+            "ci_high": 175.0,
+            "f1": 1.0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "rows_used": 4316,
+            "estimable": true,
+            "note": ""
+          },
+          "steady_precision": 0.3659,
+          "steady_recall": 1.0,
+          "steady_support": 2214
+        }
+      },
+      "class_by_cpu": {
+        "0.5": "unchanged",
+        "1": "shifted",
+        "2": "shifted"
+      },
+      "evidence": "new bound 106 with 95% CI [106, 106] excludes old 60.7 (75% shift).",
+      "boundary_probe": null,
+      "notes": "Class depends on CPU limit: 0.5 cores=unchanged, 1 cores=shifted, 2 cores=shifted."
+    },
+    {
+      "constraint_id": "K03",
+      "source": "mechanism",
+      "rule": "rps_per_pool_conn > 14.00 and cache_enabled <= 0.50",
+      "variables": [
+        "target_rps",
+        "db_pool_size",
+        "cache_enabled"
+      ],
+      "classification": "unchanged",
+      "baseline_static_precision": 1.0,
+      "steady": {
+        "phase": "steady",
+        "n_rows": 6411,
+        "support": 270,
+        "tp": 270,
+        "fp": 0,
+        "fn": 3549,
+        "tn": 2592,
+        "precision": 1.0,
+        "recall": 0.0707,
+        "f1": 0.1321,
+        "accuracy": 0.4464,
+        "mean_p95_when_matched": 1118.57,
+        "mean_p95_when_unmatched": 624.41
+      },
+      "transition": {
+        "phase": "transition",
+        "n_rows": 2229,
+        "support": 210,
+        "tp": 210,
+        "fp": 0,
+        "fn": 1731,
+        "tn": 288,
+        "precision": 1.0,
+        "recall": 0.1082,
+        "f1": 0.1953,
+        "accuracy": 0.2234,
+        "mean_p95_when_matched": 7200.2,
+        "mean_p95_when_unmatched": 5638.65
+      },
+      "bound": {
+        "statistic": "rps_per_pool_conn",
+        "comparator": ">",
+        "old_bound": 14.0,
+        "new_bound": 13.0,
+        "ci_low": 13.0,
+        "ci_high": 13.0,
+        "f1": 0.3,
+        "precision": 1.0,
+        "recall": 0.1765,
+        "rows_used": 4670,
+        "estimable": true,
+        "note": "context clauses used as filter"
+      },
+      "bounds_by_cpu": {
+        "0.5": {
+          "bound": {
+            "statistic": "rps_per_pool_conn",
+            "comparator": ">",
+            "old_bound": 14.0,
+            "new_bound": 3.0,
+            "ci_low": 3.0,
+            "ci_high": 3.0,
+            "f1": 0.8571,
+            "precision": 1.0,
+            "recall": 0.75,
+            "rows_used": 381,
+            "estimable": true,
+            "note": "context clauses used as filter"
+          },
+          "steady_precision": 1.0,
+          "steady_recall": 0.1262,
+          "steady_support": 216
+        },
+        "1": {
+          "bound": {
+            "statistic": "rps_per_pool_conn",
+            "comparator": ">",
+            "old_bound": 14.0,
+            "new_bound": 8.5,
+            "ci_low": 8.5,
+            "ci_high": 8.5,
+            "f1": 0.85,
+            "precision": 1.0,
+            "recall": 0.7391,
+            "rows_used": 1481,
+            "estimable": true,
+            "note": "context clauses used as filter"
+          },
+          "steady_precision": 0.0,
+          "steady_recall": 0.0,
+          "steady_support": 0
+        },
+        "2": {
+          "bound": {
+            "statistic": "rps_per_pool_conn",
+            "comparator": ">",
+            "old_bound": 14.0,
+            "new_bound": 13.0,
+            "ci_low": 7.0,
+            "ci_high": 13.0,
+            "f1": 0.8,
+            "precision": 1.0,
+            "recall": 0.6667,
+            "rows_used": 2808,
+            "estimable": true,
+            "note": "context clauses used as filter"
+          },
+          "steady_precision": 1.0,
+          "steady_recall": 0.0667,
+          "steady_support": 54
+        }
+      },
+      "class_by_cpu": {
+        "0.5": "shifted",
+        "1": "shifted",
+        "2": "shifted"
+      },
+      "evidence": "precision 1.00 (static 1.00), recall 0.07, support 270",
+      "boundary_probe": null,
+      "notes": ""
+    }
+  ],
+  "new_constraints": [
+    {
+      "variables": [
+        "target_rps",
+        "checkout_replicas",
+        "cpu_cores"
+      ],
+      "inequality": "target_rps / (checkout_replicas * cpu_cores ** 0.733) > 106.25",
+      "human_readable": "IF target_rps / (checkout_replicas * cpu_cores ** 0.733) > 106.25 THEN SLO_VIOLATION",
+      "method": "mechanism_threshold",
+      "confidence": 1.0,
+      "support": 0.0,
+      "support_count": 12159,
+      "source_experiments_count": 0,
+      "source_experiments": [],
+      "z3_expr": "target_rps / (checkout_replicas * cpu_cores ** 0.733) > 106.25",
+      "smt2": "(> (/ target_rps (* checkout_replicas (^ cpu_cores (/ 733.0 1000.0))))\n   (/ 425.0 4.0))",
+      "heldout_precision": 1.0,
+      "heldout_recall": 1.0,
+      "heldout_f1": 1.0,
+      "heldout_support": 1938
+    },
+    {
+      "variables": [
+        "target_rps",
+        "cpu_cores"
+      ],
+      "inequality": "target_rps > 387.50 and cpu_cores <= 1.50",
+      "human_readable": "IF target_rps > 387.50 and cpu_cores <= 1.50 THEN SLO_VIOLATION",
+      "method": "decision_tree",
+      "confidence": 0.9477,
+      "support": 0.4207,
+      "support_count": 10331,
+      "source_experiments_count": 10331,
+      "source_experiments": [
+        "vpa_500m_512Mi_r4_p50_c_425_rep0",
+        "vpa_500m_512Mi_r4_p50_c_425_rep1",
+        "vpa_500m_512Mi_r4_p50_nc_425_rep0",
+        "vpa_500m_512Mi_r4_p50_nc_425_rep1",
+        "vpa_500m_512Mi_r4_p100_c_425_rep0",
+        "vpa_500m_512Mi_r4_p100_c_425_rep1",
+        "vpa_500m_512Mi_r4_p100_nc_425_rep0",
+        "vpa_500m_512Mi_r4_p100_nc_425_rep1",
+        "vpa_500m_1Gi_r2_p50_c_475_rep0",
+        "vpa_500m_1Gi_r2_p50_c_475_rep0"
+      ],
+      "z3_expr": "And(target_rps > 387.50, cpu_cores <= 1.50)",
+      "smt2": "(and (> target_rps (/ 775.0 2.0)) (<= cpu_cores (/ 3.0 2.0)))",
+      "heldout_precision": 0.9565,
+      "heldout_recall": 0.6224,
+      "heldout_f1": 0.7541,
+      "heldout_support": 2485
+    },
+    {
+      "variables": [
+        "target_rps",
+        "cpu_cores"
+      ],
+      "inequality": "target_rps > 387.50 and cpu_cores <= 1.50 and target_rps > 450.00",
+      "human_readable": "IF target_rps > 387.50 and cpu_cores <= 1.50 and target_rps > 450.00 THEN SLO_VIOLATION",
+      "method": "decision_tree",
+      "confidence": 1.0,
+      "support": 0.3522,
+      "support_count": 8649,
+      "source_experiments_count": 8649,
+      "source_experiments": [
+        "vpa_500m_1Gi_r2_p50_c_475_rep0",
+        "vpa_500m_1Gi_r2_p50_c_475_rep0",
+        "vpa_500m_1Gi_r2_p50_c_475_rep0",
+        "vpa_500m_1Gi_r2_p50_c_475_rep0",
+        "vpa_500m_1Gi_r2_p50_c_475_rep0",
+        "vpa_500m_1Gi_r2_p50_c_475_rep0",
+        "vpa_500m_1Gi_r2_p50_c_475_rep0",
+        "vpa_500m_1Gi_r2_p50_c_475_rep0",
+        "vpa_500m_1Gi_r2_p50_c_475_rep0",
+        "vpa_500m_1Gi_r2_p50_c_475_rep0"
+      ],
+      "z3_expr": "And(target_rps > 387.50, cpu_cores <= 1.50, target_rps > 450.00)",
+      "smt2": "(and (> target_rps (/ 775.0 2.0))\n     (<= cpu_cores (/ 3.0 2.0))\n     (> target_rps 450.0))",
+      "heldout_precision": 1.0,
+      "heldout_recall": 0.58,
+      "heldout_f1": 0.7342,
+      "heldout_support": 2215
+    },
+    {
+      "variables": [
+        "target_rps",
+        "cpu_cores",
+        "checkout_replicas"
+      ],
+      "inequality": "target_rps > 387.50 and cpu_cores > 1.50 and checkout_replicas <= 3.00",
+      "human_readable": "IF target_rps > 387.50 and cpu_cores > 1.50 and checkout_replicas <= 3.00 THEN SLO_VIOLATION",
+      "method": "decision_tree",
+      "confidence": 1.0,
+      "support": 0.1002,
+      "support_count": 2461,
+      "source_experiments_count": 2461,
+      "source_experiments": [
+        "vpa_2_512Mi_r2_p50_c_425_rep0",
+        "vpa_2_512Mi_r2_p50_c_425_rep0",
+        "vpa_2_512Mi_r2_p50_c_425_rep0",
+        "vpa_2_512Mi_r2_p50_c_425_rep0",
+        "vpa_2_512Mi_r2_p50_c_425_rep0",
+        "vpa_2_512Mi_r2_p50_c_425_rep1",
+        "vpa_2_512Mi_r2_p50_c_425_rep1",
+        "vpa_2_512Mi_r2_p50_c_425_rep1",
+        "vpa_2_512Mi_r2_p50_nc_425_rep0",
+        "vpa_2_512Mi_r2_p50_nc_425_rep0"
+      ],
+      "z3_expr": "And(target_rps > 387.50, cpu_cores > 1.50, checkout_replicas <= 3.00)",
+      "smt2": "(and (> target_rps (/ 775.0 2.0))\n     (> cpu_cores (/ 3.0 2.0))\n     (<= checkout_replicas 3.0))",
+      "heldout_precision": 1.0,
+      "heldout_recall": 0.1555,
+      "heldout_f1": 0.2692,
+      "heldout_support": 594
+    }
+  ],
+  "mechanism_static_bounds": {
+    "K02": {
+      "statistic": "rps_per_replica",
+      "comparator": ">",
+      "old_bound": 0.0,
+      "new_bound": 60.7143,
+      "ci_low": 56.25,
+      "ci_high": 60.7143,
+      "f1": 1.0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "rows_used": 24,
+      "estimable": true,
+      "note": ""
+    },
+    "K03": {
+      "statistic": "rps_per_pool_conn",
+      "comparator": ">",
+      "old_bound": 0.0,
+      "new_bound": 14.0,
+      "ci_low": 7.2222,
+      "ci_high": 20.0,
+      "f1": 0.7778,
+      "precision": 0.7,
+      "recall": 0.875,
+      "rows_used": 47,
+      "estimable": true,
+      "note": ""
+    }
+  },
+  "binding_analysis": [
+    {
+      "cpu_cores": 0.5,
+      "steady_rows": 9338,
+      "slo_violations": 8042,
+      "cpu_bound_violations": 6941,
+      "db_bound_violations": 1101,
+      "cpu_bound_share": 0.8631,
+      "mean_throttled_pct_in_violations": 100.0
+    },
+    {
+      "cpu_cores": 1.0,
+      "steady_rows": 10432,
+      "slo_violations": 7192,
+      "cpu_bound_violations": 5895,
+      "db_bound_violations": 1297,
+      "cpu_bound_share": 0.8197,
+      "mean_throttled_pct_in_violations": 74.27
+    },
+    {
+      "cpu_cores": 2.0,
+      "steady_rows": 11199,
+      "slo_violations": 4071,
+      "cpu_bound_violations": 3529,
+      "db_bound_violations": 542,
+      "cpu_bound_share": 0.8669,
+      "mean_throttled_pct_in_violations": 62.5
+    }
+  ],
+  "connections_per_replica": {
+    "estimable": true,
+    "matched_load_model": {
+      "cpu_cores=1": {
+        "coef": -0.8422,
+        "ci95": [
+          -0.8648,
+          -0.8196
+        ],
+        "significant": true
+      },
+      "cpu_cores=2": {
+        "coef": -2.0296,
+        "ci95": [
+          -2.052,
+          -2.0071
+        ],
+        "significant": true
+      },
+      "memory_mib=1024": {
+        "coef": 0.2239,
+        "ci95": [
+          0.196,
+          0.2517
+        ],
+        "significant": true
+      },
+      "memory_mib=2048": {
+        "coef": 0.2181,
+        "ci95": [
+          0.1902,
+          0.2459
+        ],
+        "significant": true
+      },
+      "r2": 0.8159,
+      "n": 30969
+    },
+    "utilisation_adjusted_model": {
+      "cpu_cores=1": {
+        "coef": 0.007,
+        "ci95": [
+          0.0032,
+          0.0108
+        ],
+        "significant": true
+      },
+      "cpu_cores=2": {
+        "coef": 0.022,
+        "ci95": [
+          0.017,
+          0.027
+        ],
+        "significant": true
+      },
+      "memory_mib=1024": {
+        "coef": -0.0155,
+        "ci95": [
+          -0.0198,
+          -0.0112
+        ],
+        "significant": true
+      },
+      "memory_mib=2048": {
+        "coef": -0.0213,
+        "ci95": [
+          -0.0256,
+          -0.017
+        ],
+        "significant": true
+      },
+      "utilisation": {
+        "coef": 6.059,
+        "ci95": [
+          6.0484,
+          6.0695
+        ],
+        "significant": true
+      },
+      "r2": 0.9956,
+      "n": 30969
+    },
+    "saturated_conns_per_replica": [
+      {
+        "cpu_cores": 0.5,
+        "memory_mib": 512,
+        "mean": 6.785,
+        "max": 7.4,
+        "count": 266
+      },
+      {
+        "cpu_cores": 0.5,
+        "memory_mib": 1024,
+        "mean": 7.158,
+        "max": 7.45,
+        "count": 3888
+      },
+      {
+        "cpu_cores": 0.5,
+        "memory_mib": 2048,
+        "mean": 7.156,
+        "max": 7.45,
+        "count": 3888
+      },
+      {
+        "cpu_cores": 1.0,
+        "memory_mib": 512,
+        "mean": 6.22,
+        "max": 7.325,
+        "count": 496
+      },
+      {
+        "cpu_cores": 1.0,
+        "memory_mib": 1024,
+        "mean": 7.016,
+        "max": 7.45,
+        "count": 3024
+      },
+      {
+        "cpu_cores": 1.0,
+        "memory_mib": 2048,
+        "mean": 7.008,
+        "max": 7.45,
+        "count": 3024
+      },
+      {
+        "cpu_cores": 2.0,
+        "memory_mib": 512,
+        "mean": 6.329,
+        "max": 7.45,
+        "count": 183
+      },
+      {
+        "cpu_cores": 2.0,
+        "memory_mib": 1024,
+        "mean": 7.021,
+        "max": 7.45,
+        "count": 1944
+      },
+      {
+        "cpu_cores": 2.0,
+        "memory_mib": 2048,
+        "mean": 7.001,
+        "max": 7.45,
+        "count": 1944
+      }
+    ],
+    "example_350rps_4replicas_mean_conns_per_replica_by_cpu": {
+      "0.5": 7.202,
+      "1": 4.275,
+      "2": 2.658
+    }
+  },
+  "pod_restarts": {
+    "total_restarts": 2376,
+    "by_memory_and_cpu": [
+      {
+        "memory_mib": 512,
+        "cpu_cores": 0.5,
+        "runs": 160,
+        "restarts": 1176,
+        "runs_with_restarts": 144
+      },
+      {
+        "memory_mib": 512,
+        "cpu_cores": 1.0,
+        "runs": 160,
+        "restarts": 744,
+        "runs_with_restarts": 96
+      },
+      {
+        "memory_mib": 512,
+        "cpu_cores": 2.0,
+        "runs": 160,
+        "restarts": 456,
+        "runs_with_restarts": 72
+      },
+      {
+        "memory_mib": 1024,
+        "cpu_cores": 0.5,
+        "runs": 160,
+        "restarts": 0,
+        "runs_with_restarts": 0
+      },
+      {
+        "memory_mib": 1024,
+        "cpu_cores": 1.0,
+        "runs": 160,
+        "restarts": 0,
+        "runs_with_restarts": 0
+      },
+      {
+        "memory_mib": 1024,
+        "cpu_cores": 2.0,
+        "runs": 160,
+        "restarts": 0,
+        "runs_with_restarts": 0
+      },
+      {
+        "memory_mib": 2048,
+        "cpu_cores": 0.5,
+        "runs": 160,
+        "restarts": 0,
+        "runs_with_restarts": 0
+      },
+      {
+        "memory_mib": 2048,
+        "cpu_cores": 1.0,
+        "runs": 160,
+        "restarts": 0,
+        "runs_with_restarts": 0
+      },
+      {
+        "memory_mib": 2048,
+        "cpu_cores": 2.0,
+        "runs": 160,
+        "restarts": 0,
+        "runs_with_restarts": 0
+      }
+    ],
+    "mean_throttled_pct_by_cpu": {
+      "0.5": 72.22,
+      "1": 47.7,
+      "2": 26.39
+    }
+  },
+  "plot": "/Users/aarav/scope-x/data/vertical_capacity_vs_cpu.png"
+}

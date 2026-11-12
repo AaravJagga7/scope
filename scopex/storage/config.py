@@ -20,7 +20,14 @@ class WorkloadSpec:
     def validate(self) -> None:
         if self.rps <= 0:
             raise ValueError(f"Workload rps must be positive, got {self.rps}")
-        valid_profiles = {"normal", "flash_sale", "ramp", "viral_product", "slow_payment_api"}
+        valid_profiles = {
+            "normal",
+            "flash_sale",
+            "ramp",
+            "viral_product",
+            "slow_payment_api",
+            "sinusoidal",
+        }
         if self.profile not in valid_profiles:
             raise ValueError(f"Invalid profile '{self.profile}'. Allowed: {sorted(valid_profiles)}")
         if self.duration <= 0:
@@ -67,6 +74,51 @@ class HPASpec:
             )
 
 
+def _parse_cpu_millicores(quantity: str) -> int:
+    """Parses a Kubernetes CPU quantity (e.g. '250m', '2') into millicores."""
+    q = str(quantity).strip().lower()
+    try:
+        if q.endswith("m"):
+            return int(round(float(q[:-1])))
+        return int(round(float(q) * 1000.0))
+    except ValueError as exc:
+        raise ValueError(f"Invalid CPU quantity '{quantity}'") from exc
+
+
+def _format_cpu_millicores(millicores: float) -> str:
+    """Formats millicores back into a canonical Kubernetes CPU quantity."""
+    millis = max(1, int(round(millicores)))
+    if millis % 1000 == 0:
+        return str(millis // 1000)
+    return f"{millis}m"
+
+
+def _parse_memory_mib(quantity: str) -> float:
+    """Parses a Kubernetes memory quantity (e.g. '512Mi', '1Gi') into MiB."""
+    q = str(quantity).strip()
+    lower = q.lower()
+    for suffix, factor in (
+        ("ki", 1.0 / 1024.0),
+        ("mi", 1.0),
+        ("gi", 1024.0),
+        ("ti", 1024.0 * 1024.0),
+    ):
+        if lower.endswith(suffix):
+            try:
+                return float(q[: -len(suffix)]) * factor
+            except ValueError as exc:
+                raise ValueError(f"Invalid memory quantity '{quantity}'") from exc
+    raise ValueError(f"Memory quantity '{quantity}' must use Ki, Mi, Gi, or Ti units")
+
+
+def _format_memory_mib(mib: float) -> str:
+    """Formats MiB back into a canonical Kubernetes memory quantity."""
+    value = max(1.0, float(mib))
+    if value >= 1024.0 and value % 1024.0 == 0:
+        return f"{int(value // 1024)}Gi"
+    return f"{int(round(value))}Mi"
+
+
 @dataclass
 class VPASpec:
     """Vertical Pod Autoscaler configuration specification."""
@@ -80,6 +132,11 @@ class VPASpec:
     cpu_levels: list[str] = field(default_factory=lambda: ["250m", "500m", "1000m", "2000m"])
     memory_levels: list[str] = field(default_factory=lambda: ["256Mi", "512Mi", "1024Mi", "2048Mi"])
     in_place_resize: bool = True
+    # Optional index into cpu_levels/memory_levels. When set, it overrides the
+    # explicit *_request/*_limit values with the level's (request, limit) pair.
+    level: int | None = None
+    # Fraction of each level's limit used for the corresponding request.
+    request_ratio: float = 0.5
 
     def validate(self) -> None:
         valid_modes = {"auto", "recommendation"}
@@ -89,6 +146,52 @@ class VPASpec:
             raise ValueError(
                 f"VPA target_metric must be 'cpu' or 'memory', got '{self.target_metric}'"
             )
+        if not (0.0 < self.request_ratio <= 1.0):
+            raise ValueError(f"VPA request_ratio must be in (0, 1], got {self.request_ratio}")
+        if self.level is not None:
+            if not isinstance(self.level, int) or isinstance(self.level, bool):
+                raise ValueError(f"VPA level must be an integer index, got {self.level!r}")
+            if self.level < 0:
+                raise ValueError(f"VPA level must be >= 0, got {self.level}")
+            max_level = min(len(self.cpu_levels), len(self.memory_levels)) - 1
+            if self.level > max_level:
+                raise ValueError(
+                    f"VPA level {self.level} out of range; available levels are 0..{max_level} "
+                    f"(cpu_levels={len(self.cpu_levels)}, memory_levels={len(self.memory_levels)})"
+                )
+        for level in self.cpu_levels:
+            _parse_cpu_millicores(level)
+        for level in self.memory_levels:
+            _parse_memory_mib(level)
+
+    def resolved_resources(self) -> dict[str, Any]:
+        """Resolves the CPU/memory requests and limits for the selected vertical level.
+
+        With no level selected the explicit cpu_request/cpu_limit/memory_request/
+        memory_limit values are returned unchanged, preserving earlier behaviour.
+        """
+        if self.level is None:
+            return {
+                "level": None,
+                "cpu_request": self.cpu_request,
+                "cpu_limit": self.cpu_limit,
+                "memory_request": self.memory_request,
+                "memory_limit": self.memory_limit,
+            }
+
+        cpu_limit = self.cpu_levels[self.level]
+        memory_limit = self.memory_levels[self.level]
+        return {
+            "level": self.level,
+            "cpu_request": _format_cpu_millicores(
+                _parse_cpu_millicores(cpu_limit) * self.request_ratio
+            ),
+            "cpu_limit": cpu_limit,
+            "memory_request": _format_memory_mib(
+                _parse_memory_mib(memory_limit) * self.request_ratio
+            ),
+            "memory_limit": memory_limit,
+        }
 
 
 @dataclass
@@ -171,6 +274,26 @@ class ExperimentConfig:
         return cls.from_dict(json.loads(json_str))
 
 
+AUTOSCALER_CONFLICT_MESSAGE = (
+    "Safety Violation: Simultaneous HPA and VPA autoscaling on the same metric ('{metric}') "
+    "is strictly prohibited. Conflicting controllers induce destructive scaling oscillations."
+)
+
+
+def assert_no_autoscaler_conflict(hpa_metric: str | None, vpa_metric: str | None) -> None:
+    """Rejects running horizontal and vertical autoscalers against the same metric.
+
+    Shared by :class:`SafetyLimits` and the cluster configuration controller so the
+    invariant is enforced on every application path, not just the experiment runner.
+    """
+    if not hpa_metric or not vpa_metric:
+        return
+    hpa_norm = str(hpa_metric).strip().lower()
+    vpa_norm = str(vpa_metric).strip().lower()
+    if hpa_norm == vpa_norm:
+        raise ValueError(AUTOSCALER_CONFLICT_MESSAGE.format(metric=hpa_norm))
+
+
 @dataclass(frozen=True)
 class SafetyLimits:
     """Cluster resource ceiling safety policies to prevent overloading infrastructure."""
@@ -213,13 +336,7 @@ class SafetyLimits:
 
         # Invariant: Never run HPA and VPA on the same metric (CPU) at the same time
         if config.hpa is not None and config.vpa is not None:
-            hpa_metric = (config.hpa.metric or "cpu").strip().lower()
-            vpa_metric = (config.vpa.target_metric or "memory").strip().lower()
-            if hpa_metric == vpa_metric:
-                raise ValueError(
-                    f"Safety Violation: Simultaneous HPA and VPA autoscaling on the same metric ('{hpa_metric}') "
-                    "is strictly prohibited. Conflicting controllers induce destructive scaling oscillations."
-                )
+            assert_no_autoscaler_conflict(config.hpa.metric, config.vpa.target_metric)
 
         if config.hpa is not None:
             if config.hpa.max_replicas > self.max_replicas:

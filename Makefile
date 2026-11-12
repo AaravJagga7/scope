@@ -4,7 +4,7 @@ PYTHON := $(shell if [ -f $(VENV)/bin/python ]; then echo $(VENV)/bin/python; el
 RUFF := $(shell if [ -f $(VENV)/bin/ruff ]; then echo $(VENV)/bin/ruff; else echo ruff; fi)
 PYTEST := $(shell if [ -f $(VENV)/bin/pytest ]; then echo $(VENV)/bin/pytest; else echo pytest; fi)
 
-.PHONY: all up down test lint e2e setup clean
+.PHONY: all up down test lint e2e setup clean store
 
 all: lint test
 
@@ -55,6 +55,10 @@ e2e:
 	@echo "Running end-to-end checkout test..."
 	@./scripts/e2e_checkout.sh
 
+store:
+	@echo "Starting Bazaaro storefront + Constraint Lab on http://127.0.0.1:8010 ..."
+	@$(PYTHON) -m storefront --port 8010
+
 clean:
-	@rm -rf .pytest_cache .ruff_cache build dist *.egg-info scopex_dev.db .services.pid
+	@rm -rf .pytest_cache .ruff_cache build dist *.egg-info scopex_dev.db .services.pid .storefront
 	@find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true

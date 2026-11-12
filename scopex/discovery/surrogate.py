@@ -28,6 +28,7 @@ PROFILE_ENCODER: dict[str, int] = {
     "ramp": 2,
     "viral_product": 3,
     "slow_payment_api": 4,
+    "sinusoidal": 5,
 }
 
 CONTINUOUS_FEATURES: list[str] = [

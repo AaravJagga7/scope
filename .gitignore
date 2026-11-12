@@ -75,3 +75,4 @@ dashboard/frontend/dist/
 # Local agent skill symlinks (point into .venv)
 .agents/
 .claude/
+.storefront/

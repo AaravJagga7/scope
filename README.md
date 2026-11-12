@@ -47,3 +47,42 @@ make lint
 make test
 ```
 
+
+## Bazaaro storefront + Constraint Lab
+
+An original demo marketplace (`storefront/`) running on the SCOPE-X microservices, with a lab for testing how the operational constraints change.
+
+```bash
+make store            # or: python -m storefront --port 8010
+# open http://127.0.0.1:8010
+```
+
+The store starts the six microservices itself (ports 8001-8006). Every order goes through the real cart → inventory → payment → order flow. The header health indicator and the banner come from the store's own live service latencies.
+
+The **Constraint Lab** (`#/lab`) has four tabs:
+
+- **Live tests** (*validated on local testbed*): change checkout/inventory workers, payment latency and failure rate, and the cache, then **Apply & reset baseline**. Run a boundary sweep, a flash sale or a steady-load test. Each sweep reports the observed SLO bound, its tested region, and whether the load generator kept up. A history table shows how the bound shifts across configurations.
+- **Model what-if** (*model, simulated*): move replicas, CPU, memory, pool, cache and load. See predicted p95, the bottleneck, how the SLO boundary moves with replicas and CPU, and which stored constraints fire, with their validity in static, HPA and vertical modes.
+- **Constraint repository**: every stored constraint with its class per scaling mode (from `data/*_summary.json`).
+- **Flash-sale shield**: switch the shield's layers and thresholds live, watch the queue, and run the **drop test**. Simulated humans and bots buy the 50-unit limited item (`bz-701`) through the store's API, once with the shield off and once with it on. Results are saved to `data/experiments/drop_test_*.json` with params, seed, timestamps and git commit.
+
+### Flash-sale shield
+
+The shield guards add-to-cart and checkout; browsing stays open. It is on by default (`SHIELD_ENABLED=0` turns it off).
+
+- **Waiting room** (`storefront/shield.py`): opens when purchase-path traffic or the number of active shoppers passes a threshold, or always in drop mode. Shoppers get a FIFO position and ETA and are admitted at a fixed rate per minute.
+- **Stock reservation with TTL** (`services/inventory`): add-to-cart creates a hold (default 5 min) using a single conditional `UPDATE … WHERE available_qty >= q`, so concurrent buyers cannot oversell. Unpaid holds expire and return to stock. Checkout locks and commits the hold. Limited items have a per-customer limit.
+- **Bot defence**: per-IP and per-device token-bucket rate limits; an explainable 0–100 behaviour score (automation user-agent, no product view, too fast, cookie dropping, no interaction signals, failed challenges); SHA-256 proof-of-work for suspicious sessions and for joining the queue. There is no CAPTCHA provider locally.
+
+Measured locally (50 units, 200 humans, 10 bots × 8/s, 25% abandon, 20 s hold TTL; *validated on local testbed*):
+
+| | shield off | shield on |
+|---|---|---|
+| units sold / stock | 74–104 / 50 (3 runs) | 34 / 50 |
+| oversold | 24–54 | 0 |
+| units bought by bots | 100% | 0% |
+| human checkout p95 | (no human got one) | 91–93 ms |
+
+With the shield off, the legacy `/inventory/reserve` read-then-write races on SQLite, which causes the oversell. With the shield on, 16 abandoned holds expired back into stock after every remaining human had already been told "sold out", so they went unsold.
+
+Local caveats: no Docker means SQLite instead of Postgres and an in-memory cache instead of Redis. "Replicas" are uvicorn worker processes on one machine, and the load generator shares that machine. The SLO thresholds (p95 ≤ 500 ms, errors ≤ 1%) are configurable in the Lab.

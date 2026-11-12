@@ -24,6 +24,7 @@ WORKLOAD_PROFILES = [
     "ramp",
     "viral_product",
     "slow_payment_api",
+    "sinusoidal",
 ]
 
 
@@ -168,8 +169,13 @@ def generate_grid_configs(
 def simulate_system_metrics(
     config: ExperimentConfig,
     seed: int | None = None,
+    frontend_rps_per_replica: float | None = None,
 ) -> dict[str, Any]:
     """Simulates realistic microservice performance metrics based on queuing and capacity dynamics.
+
+    ``frontend_rps_per_replica`` overrides the calibrated per-replica CPU capacity
+    (70 rps at the 500m baseline limit). Vertical-scaling studies use it to inject
+    a CPU-limit-dependent capacity; when omitted, behaviour is unchanged.
 
     Models:
     - Frontend CPU capacity per checkout replica.
@@ -187,9 +193,12 @@ def simulate_system_metrics(
     profile = config.workload.profile
 
     # 1. Frontend CPU Capacity
+    override_capacity = frontend_rps_per_replica
     frontend_rps_per_replica = 70.0
     if profile == "slow_payment_api":
         frontend_rps_per_replica = 35.0  # Slow external payment blocks workers
+    if override_capacity is not None:
+        frontend_rps_per_replica = float(override_capacity)
     frontend_capacity = replicas * frontend_rps_per_replica
 
     # 2. Database Capacity

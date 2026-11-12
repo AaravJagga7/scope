@@ -24,6 +24,7 @@ from locust.env import Environment
 from workload.locustfile import PROFILE_USER_CLASSES
 from workload.profiles import (
     RampLoadShape,
+    SinusoidalLoadShape,
     compute_concurrency,
     get_profile_config,
 )
@@ -178,6 +179,11 @@ def run_workload(
     try:
         if profile_name == "ramp":
             shape = RampLoadShape()
+            shape.target_users = users
+            shape.duration = effective_duration
+            runner.start_shape()
+        elif profile_name == "sinusoidal":
+            shape = SinusoidalLoadShape()
             shape.target_users = users
             shape.duration = effective_duration
             runner.start_shape()

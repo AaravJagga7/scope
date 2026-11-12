@@ -237,10 +237,30 @@ class SlowPaymentUser(BaseScopeXUser):
         self.browse_catalog()
 
 
+class SinusoidalUser(BaseScopeXUser):
+    """Simulates oscillating traffic that repeatedly crosses the capacity boundary."""
+
+    cfg = PROFILES["sinusoidal"]
+    wait_time = between(cfg.min_wait, cfg.max_wait)
+
+    @task(50)
+    def task_checkout(self) -> None:
+        self.execute_checkout()
+
+    @task(30)
+    def task_browse(self) -> None:
+        self.browse_catalog()
+
+    @task(20)
+    def task_cart(self) -> None:
+        self.add_to_cart("prod-3", 1)
+
+
 PROFILE_USER_CLASSES: dict[str, type[BaseScopeXUser]] = {
     "normal": NormalUser,
     "flash_sale": FlashSaleUser,
     "ramp": RampUser,
     "viral_product": ViralProductUser,
     "slow_payment_api": SlowPaymentUser,
+    "sinusoidal": SinusoidalUser,
 }

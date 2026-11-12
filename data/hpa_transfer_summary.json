@@ -1,0 +1,1742 @@
+{
+  "task": "14C",
+  "model_note": "All runs are simulated with scopex.storage.dataset.simulate_system_metrics (queuing/capacity model). This is a model-level transfer study, not a hardware measurement.",
+  "design": {
+    "cpu_targets": [
+      50,
+      70,
+      90
+    ],
+    "max_replicas": [
+      4,
+      6,
+      10
+    ],
+    "db_pools": [
+      50,
+      100
+    ],
+    "workloads": [
+      "ramp",
+      "flash_sale",
+      "sinusoidal"
+    ],
+    "repeats": 3,
+    "heldout_fraction": 0.2,
+    "cells": 54,
+    "runs": 162,
+    "total_seconds_rows": 6480,
+    "heldout_cells": 11
+  },
+  "tested_region": {
+    "hpa_cpu_targets": [
+      50,
+      70,
+      90
+    ],
+    "hpa_max_replicas": [
+      4,
+      6,
+      10
+    ],
+    "db_pool_sizes": [
+      50,
+      100
+    ],
+    "workloads": [
+      "ramp",
+      "flash_sale",
+      "sinusoidal"
+    ],
+    "target_rps": 500,
+    "checkout_replicas": "dynamic 1..max_replicas (set by HPA)",
+    "cache_enabled": true,
+    "consumers": 2,
+    "duration_seconds": 40,
+    "repeats": 3
+  },
+  "constraints": [
+    {
+      "constraint_id": "C01",
+      "source": "learned",
+      "rule": "target_rps > 487.50 and cache_enabled <= 0.50",
+      "variables": [
+        "target_rps",
+        "cache_enabled"
+      ],
+      "classification": "disappeared",
+      "baseline_static_precision": 1.0,
+      "baseline_static_recall": 0.6,
+      "steady": {
+        "phase": "steady",
+        "n_rows": 622,
+        "support": 0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 219,
+        "tn": 403,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "accuracy": 0.6479,
+        "mean_p95_when_matched": 0.0,
+        "mean_p95_when_unmatched": 483.81
+      },
+      "transition": {
+        "phase": "transition",
+        "n_rows": 698,
+        "support": 0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 219,
+        "tn": 479,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "accuracy": 0.6862,
+        "mean_p95_when_matched": 0.0,
+        "mean_p95_when_unmatched": 495.99
+      },
+      "bound": {
+        "statistic": "target_rps",
+        "comparator": ">",
+        "old_bound": 487.5,
+        "new_bound": null,
+        "ci_low": null,
+        "ci_high": null,
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "rows_used": 0,
+        "estimable": false,
+        "note": "context clauses not satisfied in the tested HPA region"
+      },
+      "refit_experiments": 0,
+      "refit_ci_after": null,
+      "connection_violations": 0,
+      "tested_region": {
+        "hpa_cpu_targets": [
+          50,
+          70,
+          90
+        ],
+        "hpa_max_replicas": [
+          4,
+          6,
+          10
+        ],
+        "db_pool_sizes": [
+          50,
+          100
+        ],
+        "workloads": [
+          "ramp",
+          "flash_sale",
+          "sinusoidal"
+        ],
+        "target_rps": 500,
+        "checkout_replicas": "dynamic 1..max_replicas (set by HPA)",
+        "cache_enabled": true,
+        "consumers": 2,
+        "duration_seconds": 40,
+        "repeats": 3
+      },
+      "evidence": "rule has zero support in the tested HPA region",
+      "notes": "cache_enabled is fixed True in the HPA region, so cache-off branches cannot be exercised; disappearance here is a region limitation, not an HPA effect. Tested region: RPS 0.3-1.0 x 500, replicas dynamic 1-10, pool [50, 100], workloads ['ramp', 'flash_sale', 'sinusoidal'], cache on."
+    },
+    {
+      "constraint_id": "C02",
+      "source": "learned",
+      "rule": "0.00093 * target_rps - 0.00666 * checkout_replicas + +0.00157 * db_pool_size - 0.15622 * cache_enabled >= 0.4311",
+      "variables": [
+        "target_rps",
+        "checkout_replicas",
+        "db_pool_size",
+        "cache_enabled"
+      ],
+      "classification": "shifted",
+      "baseline_static_precision": 0.6,
+      "baseline_static_recall": 0.9,
+      "steady": {
+        "phase": "steady",
+        "n_rows": 622,
+        "support": 105,
+        "tp": 78,
+        "fp": 27,
+        "fn": 141,
+        "tn": 376,
+        "precision": 0.7429,
+        "recall": 0.3562,
+        "f1": 0.4815,
+        "accuracy": 0.7299,
+        "mean_p95_when_matched": 820.56,
+        "mean_p95_when_unmatched": 415.42
+      },
+      "transition": {
+        "phase": "transition",
+        "n_rows": 698,
+        "support": 144,
+        "tp": 96,
+        "fp": 48,
+        "fn": 123,
+        "tn": 431,
+        "precision": 0.6667,
+        "recall": 0.4384,
+        "f1": 0.5289,
+        "accuracy": 0.755,
+        "mean_p95_when_matched": 782.92,
+        "mean_p95_when_unmatched": 421.41
+      },
+      "bound": {
+        "statistic": "score",
+        "comparator": ">",
+        "old_bound": 0.4311,
+        "new_bound": 0.3469,
+        "ci_low": 0.345,
+        "ci_high": 0.3469,
+        "f1": 0.8207,
+        "precision": 0.7029,
+        "recall": 0.9858,
+        "rows_used": 2329,
+        "estimable": true,
+        "note": "bound is on the rule's linear score, not a single variable"
+      },
+      "refit_experiments": 0,
+      "refit_ci_after": [
+        0.345,
+        0.3469
+      ],
+      "connection_violations": 0,
+      "tested_region": {
+        "hpa_cpu_targets": [
+          50,
+          70,
+          90
+        ],
+        "hpa_max_replicas": [
+          4,
+          6,
+          10
+        ],
+        "db_pool_sizes": [
+          50,
+          100
+        ],
+        "workloads": [
+          "ramp",
+          "flash_sale",
+          "sinusoidal"
+        ],
+        "target_rps": 500,
+        "checkout_replicas": "dynamic 1..max_replicas (set by HPA)",
+        "cache_enabled": true,
+        "consumers": 2,
+        "duration_seconds": 40,
+        "repeats": 3
+      },
+      "evidence": "new bound 0.347 with 95% CI [0.345, 0.347] excludes old 0.431 (20% shift).",
+      "notes": "cache_enabled is fixed True in the HPA region, so cache-off branches cannot be exercised; disappearance here is a region limitation, not an HPA effect."
+    },
+    {
+      "constraint_id": "C03",
+      "source": "learned",
+      "rule": "0.00087 * target_rps - 0.01911 * checkout_replicas + +0.00167 * db_pool_size - 0.37137 * cache_enabled >= 0.2423",
+      "variables": [
+        "target_rps",
+        "checkout_replicas",
+        "db_pool_size",
+        "cache_enabled"
+      ],
+      "classification": "shifted",
+      "baseline_static_precision": 0.5833,
+      "baseline_static_recall": 0.7,
+      "steady": {
+        "phase": "steady",
+        "n_rows": 622,
+        "support": 0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 219,
+        "tn": 403,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "accuracy": 0.6479,
+        "mean_p95_when_matched": 0.0,
+        "mean_p95_when_unmatched": 483.81
+      },
+      "transition": {
+        "phase": "transition",
+        "n_rows": 698,
+        "support": 0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 219,
+        "tn": 479,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "accuracy": 0.6862,
+        "mean_p95_when_matched": 0.0,
+        "mean_p95_when_unmatched": 495.99
+      },
+      "bound": {
+        "statistic": "score",
+        "comparator": ">",
+        "old_bound": 0.2423,
+        "new_bound": 0.0671,
+        "ci_low": 0.0315,
+        "ci_high": 0.0671,
+        "f1": 0.8027,
+        "precision": 0.7729,
+        "recall": 0.8349,
+        "rows_used": 2329,
+        "estimable": true,
+        "note": "bound is on the rule's linear score, not a single variable"
+      },
+      "refit_experiments": 3,
+      "refit_ci_after": [
+        0.0671,
+        0.0671
+      ],
+      "connection_violations": 0,
+      "tested_region": {
+        "hpa_cpu_targets": [
+          50,
+          70,
+          90
+        ],
+        "hpa_max_replicas": [
+          4,
+          6,
+          10
+        ],
+        "db_pool_sizes": [
+          50,
+          100
+        ],
+        "workloads": [
+          "ramp",
+          "flash_sale",
+          "sinusoidal"
+        ],
+        "target_rps": 500,
+        "checkout_replicas": "dynamic 1..max_replicas (set by HPA)",
+        "cache_enabled": true,
+        "consumers": 2,
+        "duration_seconds": 40,
+        "repeats": 3
+      },
+      "evidence": "new bound 0.0671 with 95% CI [0.0315, 0.0671] excludes old 0.242 (72% shift). Previous condition has zero support in the HPA region, so only the re-fitted bound is usable there.",
+      "notes": "cache_enabled is fixed True in the HPA region, so cache-off branches cannot be exercised; disappearance here is a region limitation, not an HPA effect. Re-fit used 3 GP-selected extra run(s); CI after re-fit [0.0671, 0.0671]."
+    },
+    {
+      "constraint_id": "C04",
+      "source": "learned",
+      "rule": "0.00089 * target_rps - 0.01413 * checkout_replicas + +0.00163 * db_pool_size - 0.28531 * cache_enabled >= 0.3178",
+      "variables": [
+        "target_rps",
+        "checkout_replicas",
+        "db_pool_size",
+        "cache_enabled"
+      ],
+      "classification": "shifted",
+      "baseline_static_precision": 0.5833,
+      "baseline_static_recall": 0.7,
+      "steady": {
+        "phase": "steady",
+        "n_rows": 622,
+        "support": 0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 219,
+        "tn": 403,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "accuracy": 0.6479,
+        "mean_p95_when_matched": 0.0,
+        "mean_p95_when_unmatched": 483.81
+      },
+      "transition": {
+        "phase": "transition",
+        "n_rows": 698,
+        "support": 0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 219,
+        "tn": 479,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "accuracy": 0.6862,
+        "mean_p95_when_matched": 0.0,
+        "mean_p95_when_unmatched": 495.99
+      },
+      "bound": {
+        "statistic": "score",
+        "comparator": ">",
+        "old_bound": 0.3178,
+        "new_bound": 0.156,
+        "ci_low": 0.156,
+        "ci_high": 0.1814,
+        "f1": 0.8008,
+        "precision": 0.6742,
+        "recall": 0.9858,
+        "rows_used": 2329,
+        "estimable": true,
+        "note": "bound is on the rule's linear score, not a single variable"
+      },
+      "refit_experiments": 5,
+      "refit_ci_after": [
+        0.156,
+        0.1814
+      ],
+      "connection_violations": 0,
+      "tested_region": {
+        "hpa_cpu_targets": [
+          50,
+          70,
+          90
+        ],
+        "hpa_max_replicas": [
+          4,
+          6,
+          10
+        ],
+        "db_pool_sizes": [
+          50,
+          100
+        ],
+        "workloads": [
+          "ramp",
+          "flash_sale",
+          "sinusoidal"
+        ],
+        "target_rps": 500,
+        "checkout_replicas": "dynamic 1..max_replicas (set by HPA)",
+        "cache_enabled": true,
+        "consumers": 2,
+        "duration_seconds": 40,
+        "repeats": 3
+      },
+      "evidence": "new bound 0.156 with 95% CI [0.156, 0.181] excludes old 0.318 (51% shift). Previous condition has zero support in the HPA region, so only the re-fitted bound is usable there.",
+      "notes": "cache_enabled is fixed True in the HPA region, so cache-off branches cannot be exercised; disappearance here is a region limitation, not an HPA effect. Re-fit used 5 GP-selected extra run(s); CI after re-fit [0.156, 0.181] (budget exhausted before reaching target CI width)."
+    },
+    {
+      "constraint_id": "C05",
+      "source": "learned",
+      "rule": "0.00097 * target_rps + +0.00150 * db_pool_size >= 0.5540",
+      "variables": [
+        "target_rps",
+        "db_pool_size"
+      ],
+      "classification": "unchanged",
+      "baseline_static_precision": 0.5833,
+      "baseline_static_recall": 0.7,
+      "steady": {
+        "phase": "steady",
+        "n_rows": 622,
+        "support": 358,
+        "tp": 219,
+        "fp": 139,
+        "fn": 0,
+        "tn": 264,
+        "precision": 0.6117,
+        "recall": 1.0,
+        "f1": 0.7591,
+        "accuracy": 0.7765,
+        "mean_p95_when_matched": 707.91,
+        "mean_p95_when_unmatched": 179.91
+      },
+      "transition": {
+        "phase": "transition",
+        "n_rows": 698,
+        "support": 362,
+        "tp": 207,
+        "fp": 155,
+        "fn": 12,
+        "tn": 324,
+        "precision": 0.5718,
+        "recall": 0.9452,
+        "f1": 0.7126,
+        "accuracy": 0.7607,
+        "mean_p95_when_matched": 700.76,
+        "mean_p95_when_unmatched": 275.37
+      },
+      "bound": {
+        "statistic": "score",
+        "comparator": ">",
+        "old_bound": 0.554,
+        "new_bound": 0.5586,
+        "ci_low": 0.5586,
+        "ci_high": 0.5586,
+        "f1": 0.8018,
+        "precision": 0.6713,
+        "recall": 0.9953,
+        "rows_used": 2329,
+        "estimable": true,
+        "note": "bound is on the rule's linear score, not a single variable"
+      },
+      "refit_experiments": 0,
+      "refit_ci_after": null,
+      "connection_violations": 0,
+      "tested_region": {
+        "hpa_cpu_targets": [
+          50,
+          70,
+          90
+        ],
+        "hpa_max_replicas": [
+          4,
+          6,
+          10
+        ],
+        "db_pool_sizes": [
+          50,
+          100
+        ],
+        "workloads": [
+          "ramp",
+          "flash_sale",
+          "sinusoidal"
+        ],
+        "target_rps": 500,
+        "checkout_replicas": "dynamic 1..max_replicas (set by HPA)",
+        "cache_enabled": true,
+        "consumers": 2,
+        "duration_seconds": 40,
+        "repeats": 3
+      },
+      "evidence": "precision 0.61 (static 0.58), recall 1.00, support 358",
+      "notes": ""
+    },
+    {
+      "constraint_id": "C06",
+      "source": "learned",
+      "rule": "0.00097 * target_rps + +0.00144 * db_pool_size >= 0.5506",
+      "variables": [
+        "target_rps",
+        "db_pool_size"
+      ],
+      "classification": "unchanged",
+      "baseline_static_precision": 0.5833,
+      "baseline_static_recall": 0.7,
+      "steady": {
+        "phase": "steady",
+        "n_rows": 622,
+        "support": 358,
+        "tp": 219,
+        "fp": 139,
+        "fn": 0,
+        "tn": 264,
+        "precision": 0.6117,
+        "recall": 1.0,
+        "f1": 0.7591,
+        "accuracy": 0.7765,
+        "mean_p95_when_matched": 707.91,
+        "mean_p95_when_unmatched": 179.91
+      },
+      "transition": {
+        "phase": "transition",
+        "n_rows": 698,
+        "support": 362,
+        "tp": 207,
+        "fp": 155,
+        "fn": 12,
+        "tn": 324,
+        "precision": 0.5718,
+        "recall": 0.9452,
+        "f1": 0.7126,
+        "accuracy": 0.7607,
+        "mean_p95_when_matched": 700.76,
+        "mean_p95_when_unmatched": 275.37
+      },
+      "bound": {
+        "statistic": "score",
+        "comparator": ">",
+        "old_bound": 0.5506,
+        "new_bound": 0.5526,
+        "ci_low": 0.5526,
+        "ci_high": 0.5526,
+        "f1": 0.8018,
+        "precision": 0.6713,
+        "recall": 0.9953,
+        "rows_used": 2329,
+        "estimable": true,
+        "note": "bound is on the rule's linear score, not a single variable"
+      },
+      "refit_experiments": 0,
+      "refit_ci_after": null,
+      "connection_violations": 0,
+      "tested_region": {
+        "hpa_cpu_targets": [
+          50,
+          70,
+          90
+        ],
+        "hpa_max_replicas": [
+          4,
+          6,
+          10
+        ],
+        "db_pool_sizes": [
+          50,
+          100
+        ],
+        "workloads": [
+          "ramp",
+          "flash_sale",
+          "sinusoidal"
+        ],
+        "target_rps": 500,
+        "checkout_replicas": "dynamic 1..max_replicas (set by HPA)",
+        "cache_enabled": true,
+        "consumers": 2,
+        "duration_seconds": 40,
+        "repeats": 3
+      },
+      "evidence": "precision 0.61 (static 0.58), recall 1.00, support 358",
+      "notes": ""
+    },
+    {
+      "constraint_id": "C07",
+      "source": "learned",
+      "rule": "target_rps > 487.50 and cache_enabled > 0.50 and db_pool_size > 22.50 and target_rps <= 862.50",
+      "variables": [
+        "target_rps",
+        "cache_enabled",
+        "db_pool_size"
+      ],
+      "classification": "unchanged",
+      "baseline_static_precision": 0.3333,
+      "baseline_static_recall": 0.2,
+      "steady": {
+        "phase": "steady",
+        "n_rows": 622,
+        "support": 290,
+        "tp": 219,
+        "fp": 71,
+        "fn": 0,
+        "tn": 332,
+        "precision": 0.7552,
+        "recall": 1.0,
+        "f1": 0.8605,
+        "accuracy": 0.8859,
+        "mean_p95_when_matched": 778.71,
+        "mean_p95_when_unmatched": 226.22
+      },
+      "transition": {
+        "phase": "transition",
+        "n_rows": 698,
+        "support": 274,
+        "tp": 207,
+        "fp": 67,
+        "fn": 12,
+        "tn": 412,
+        "precision": 0.7555,
+        "recall": 0.9452,
+        "f1": 0.8398,
+        "accuracy": 0.8868,
+        "mean_p95_when_matched": 810.38,
+        "mean_p95_when_unmatched": 292.82
+      },
+      "bound": {
+        "statistic": "target_rps",
+        "comparator": ">",
+        "old_bound": 487.5,
+        "new_bound": 491.4,
+        "ci_low": 491.4,
+        "ci_high": 491.4,
+        "f1": 0.8841,
+        "precision": 0.7952,
+        "recall": 0.9953,
+        "rows_used": 2329,
+        "estimable": true,
+        "note": ""
+      },
+      "refit_experiments": 0,
+      "refit_ci_after": null,
+      "connection_violations": 0,
+      "tested_region": {
+        "hpa_cpu_targets": [
+          50,
+          70,
+          90
+        ],
+        "hpa_max_replicas": [
+          4,
+          6,
+          10
+        ],
+        "db_pool_sizes": [
+          50,
+          100
+        ],
+        "workloads": [
+          "ramp",
+          "flash_sale",
+          "sinusoidal"
+        ],
+        "target_rps": 500,
+        "checkout_replicas": "dynamic 1..max_replicas (set by HPA)",
+        "cache_enabled": true,
+        "consumers": 2,
+        "duration_seconds": 40,
+        "repeats": 3
+      },
+      "evidence": "precision 0.76 (static 0.33), recall 1.00, support 290",
+      "notes": "cache_enabled is fixed True in the HPA region, so cache-off branches cannot be exercised; disappearance here is a region limitation, not an HPA effect."
+    },
+    {
+      "constraint_id": "C08",
+      "source": "learned",
+      "rule": "target_rps > 487.50 and cache_enabled > 0.50 and db_pool_size > 22.50",
+      "variables": [
+        "target_rps",
+        "cache_enabled",
+        "db_pool_size"
+      ],
+      "classification": "unchanged",
+      "baseline_static_precision": 0.2857,
+      "baseline_static_recall": 0.2,
+      "steady": {
+        "phase": "steady",
+        "n_rows": 622,
+        "support": 290,
+        "tp": 219,
+        "fp": 71,
+        "fn": 0,
+        "tn": 332,
+        "precision": 0.7552,
+        "recall": 1.0,
+        "f1": 0.8605,
+        "accuracy": 0.8859,
+        "mean_p95_when_matched": 778.71,
+        "mean_p95_when_unmatched": 226.22
+      },
+      "transition": {
+        "phase": "transition",
+        "n_rows": 698,
+        "support": 274,
+        "tp": 207,
+        "fp": 67,
+        "fn": 12,
+        "tn": 412,
+        "precision": 0.7555,
+        "recall": 0.9452,
+        "f1": 0.8398,
+        "accuracy": 0.8868,
+        "mean_p95_when_matched": 810.38,
+        "mean_p95_when_unmatched": 292.82
+      },
+      "bound": {
+        "statistic": "target_rps",
+        "comparator": ">",
+        "old_bound": 487.5,
+        "new_bound": 491.4,
+        "ci_low": 491.4,
+        "ci_high": 491.4,
+        "f1": 0.8841,
+        "precision": 0.7952,
+        "recall": 0.9953,
+        "rows_used": 2329,
+        "estimable": true,
+        "note": ""
+      },
+      "refit_experiments": 0,
+      "refit_ci_after": null,
+      "connection_violations": 0,
+      "tested_region": {
+        "hpa_cpu_targets": [
+          50,
+          70,
+          90
+        ],
+        "hpa_max_replicas": [
+          4,
+          6,
+          10
+        ],
+        "db_pool_sizes": [
+          50,
+          100
+        ],
+        "workloads": [
+          "ramp",
+          "flash_sale",
+          "sinusoidal"
+        ],
+        "target_rps": 500,
+        "checkout_replicas": "dynamic 1..max_replicas (set by HPA)",
+        "cache_enabled": true,
+        "consumers": 2,
+        "duration_seconds": 40,
+        "repeats": 3
+      },
+      "evidence": "precision 0.76 (static 0.29), recall 1.00, support 290",
+      "notes": "cache_enabled is fixed True in the HPA region, so cache-off branches cannot be exercised; disappearance here is a region limitation, not an HPA effect."
+    },
+    {
+      "constraint_id": "C09",
+      "source": "learned",
+      "rule": "target_rps <= 487.50 and cache_enabled <= 0.50 and checkout_replicas <= 3.50",
+      "variables": [
+        "target_rps",
+        "cache_enabled",
+        "checkout_replicas"
+      ],
+      "classification": "disappeared",
+      "baseline_static_precision": 0.0,
+      "baseline_static_recall": 0.0,
+      "steady": {
+        "phase": "steady",
+        "n_rows": 622,
+        "support": 0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 219,
+        "tn": 403,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "accuracy": 0.6479,
+        "mean_p95_when_matched": 0.0,
+        "mean_p95_when_unmatched": 483.81
+      },
+      "transition": {
+        "phase": "transition",
+        "n_rows": 698,
+        "support": 0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 219,
+        "tn": 479,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "accuracy": 0.6862,
+        "mean_p95_when_matched": 0.0,
+        "mean_p95_when_unmatched": 495.99
+      },
+      "bound": {
+        "statistic": "target_rps",
+        "comparator": "<",
+        "old_bound": 487.5,
+        "new_bound": null,
+        "ci_low": null,
+        "ci_high": null,
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "rows_used": 0,
+        "estimable": false,
+        "note": "context clauses not satisfied in the tested HPA region"
+      },
+      "refit_experiments": 0,
+      "refit_ci_after": null,
+      "connection_violations": 0,
+      "tested_region": {
+        "hpa_cpu_targets": [
+          50,
+          70,
+          90
+        ],
+        "hpa_max_replicas": [
+          4,
+          6,
+          10
+        ],
+        "db_pool_sizes": [
+          50,
+          100
+        ],
+        "workloads": [
+          "ramp",
+          "flash_sale",
+          "sinusoidal"
+        ],
+        "target_rps": 500,
+        "checkout_replicas": "dynamic 1..max_replicas (set by HPA)",
+        "cache_enabled": true,
+        "consumers": 2,
+        "duration_seconds": 40,
+        "repeats": 3
+      },
+      "evidence": "rule has zero support in the tested HPA region",
+      "notes": "cache_enabled is fixed True in the HPA region, so cache-off branches cannot be exercised; disappearance here is a region limitation, not an HPA effect. Tested region: RPS 0.3-1.0 x 500, replicas dynamic 1-10, pool [50, 100], workloads ['ramp', 'flash_sale', 'sinusoidal'], cache on."
+    },
+    {
+      "constraint_id": "C10",
+      "source": "learned",
+      "rule": "target_rps <= 487.50 and cache_enabled <= 0.50 and checkout_replicas <= 3.50 and target_rps <= 287.50",
+      "variables": [
+        "target_rps",
+        "cache_enabled",
+        "checkout_replicas"
+      ],
+      "classification": "disappeared",
+      "baseline_static_precision": 0.0,
+      "baseline_static_recall": 0.0,
+      "steady": {
+        "phase": "steady",
+        "n_rows": 622,
+        "support": 0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 219,
+        "tn": 403,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "accuracy": 0.6479,
+        "mean_p95_when_matched": 0.0,
+        "mean_p95_when_unmatched": 483.81
+      },
+      "transition": {
+        "phase": "transition",
+        "n_rows": 698,
+        "support": 0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 219,
+        "tn": 479,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "accuracy": 0.6862,
+        "mean_p95_when_matched": 0.0,
+        "mean_p95_when_unmatched": 495.99
+      },
+      "bound": {
+        "statistic": "target_rps",
+        "comparator": "<",
+        "old_bound": 487.5,
+        "new_bound": null,
+        "ci_low": null,
+        "ci_high": null,
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "rows_used": 0,
+        "estimable": false,
+        "note": "context clauses not satisfied in the tested HPA region"
+      },
+      "refit_experiments": 0,
+      "refit_ci_after": null,
+      "connection_violations": 0,
+      "tested_region": {
+        "hpa_cpu_targets": [
+          50,
+          70,
+          90
+        ],
+        "hpa_max_replicas": [
+          4,
+          6,
+          10
+        ],
+        "db_pool_sizes": [
+          50,
+          100
+        ],
+        "workloads": [
+          "ramp",
+          "flash_sale",
+          "sinusoidal"
+        ],
+        "target_rps": 500,
+        "checkout_replicas": "dynamic 1..max_replicas (set by HPA)",
+        "cache_enabled": true,
+        "consumers": 2,
+        "duration_seconds": 40,
+        "repeats": 3
+      },
+      "evidence": "rule has zero support in the tested HPA region",
+      "notes": "cache_enabled is fixed True in the HPA region, so cache-off branches cannot be exercised; disappearance here is a region limitation, not an HPA effect. Tested region: RPS 0.3-1.0 x 500, replicas dynamic 1-10, pool [50, 100], workloads ['ramp', 'flash_sale', 'sinusoidal'], cache on."
+    },
+    {
+      "constraint_id": "K01",
+      "source": "structural",
+      "rule": "checkout_replicas * 6.00 - db_pool_size > 0",
+      "variables": [
+        "checkout_replicas",
+        "db_pool_size"
+      ],
+      "classification": "violated-by-autoscaler",
+      "baseline_static_precision": null,
+      "baseline_static_recall": null,
+      "steady": {
+        "phase": "steady",
+        "n_rows": 622,
+        "support": 0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 219,
+        "tn": 403,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "accuracy": 0.6479,
+        "mean_p95_when_matched": 0.0,
+        "mean_p95_when_unmatched": 483.81
+      },
+      "transition": {
+        "phase": "transition",
+        "n_rows": 698,
+        "support": 0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 219,
+        "tn": 479,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "accuracy": 0.6862,
+        "mean_p95_when_matched": 0.0,
+        "mean_p95_when_unmatched": 495.99
+      },
+      "bound": null,
+      "refit_experiments": 0,
+      "refit_ci_after": null,
+      "connection_violations": 275,
+      "tested_region": {
+        "hpa_cpu_targets": [
+          50,
+          70,
+          90
+        ],
+        "hpa_max_replicas": [
+          4,
+          6,
+          10
+        ],
+        "db_pool_sizes": [
+          50,
+          100
+        ],
+        "workloads": [
+          "ramp",
+          "flash_sale",
+          "sinusoidal"
+        ],
+        "target_rps": 500,
+        "checkout_replicas": "dynamic 1..max_replicas (set by HPA)",
+        "cache_enabled": true,
+        "consumers": 2,
+        "duration_seconds": 40,
+        "repeats": 3
+      },
+      "evidence": "275 violating rows; HPA scale-up exceeded pool/6",
+      "notes": "Invariant derived from the simulator's calibrated connection demand (6 per replica); not a learned statistical rule. No static held-out precision recorded in the validated set."
+    }
+  ],
+  "new_transient_constraints": [
+    {
+      "variables": [
+        "target_rps",
+        "checkout_replicas"
+      ],
+      "inequality": "target_rps > 495.70 and checkout_replicas <= 7.50 and checkout_replicas <= 2.50",
+      "human_readable": "IF target_rps > 495.70 and checkout_replicas <= 7.50 and checkout_replicas <= 2.50 THEN SLO_VIOLATION",
+      "method": "decision_tree",
+      "confidence": 0.896,
+      "support": 0.1325,
+      "support_count": 375,
+      "source_experiments_count": 375,
+      "source_experiments": [
+        "hpa_flas_50_4_50_r0",
+        "hpa_flas_50_4_50_r0",
+        "hpa_flas_50_4_50_r0",
+        "hpa_flas_50_4_50_r0",
+        "hpa_flas_50_4_50_r0",
+        "hpa_flas_50_4_50_r0",
+        "hpa_flas_50_4_50_r0",
+        "hpa_flas_50_4_50_r0",
+        "hpa_flas_50_4_50_r1",
+        "hpa_flas_50_4_50_r1"
+      ],
+      "z3_expr": "And(target_rps > 495.70, checkout_replicas <= 7.50, checkout_replicas <= 2.50)",
+      "smt2": "(and (> target_rps (/ 4957.0 10.0))\n     (<= checkout_replicas (/ 15.0 2.0))\n     (<= checkout_replicas (/ 5.0 2.0)))",
+      "heldout_precision": 0.8649,
+      "heldout_recall": 0.4384,
+      "heldout_f1": 0.5818,
+      "heldout_support": 111
+    }
+  ],
+  "connection_invariant": {
+    "total_violation_rows": 275,
+    "affected_runs": 17,
+    "slo_violating_rows": 3,
+    "by_configuration": [
+      {
+        "workload": "flash_sale",
+        "hpa_target_cpu": 50,
+        "hpa_max_replicas": 10,
+        "db_pool_size": 50,
+        "violation_rows": 60,
+        "first_violating_second": 20,
+        "peak_replicas": 10,
+        "peak_demand": 60.0,
+        "slo_violations": 0
+      },
+      {
+        "workload": "flash_sale",
+        "hpa_target_cpu": 70,
+        "hpa_max_replicas": 10,
+        "db_pool_size": 50,
+        "violation_rows": 45,
+        "first_violating_second": 25,
+        "peak_replicas": 10,
+        "peak_demand": 60.0,
+        "slo_violations": 3
+      },
+      {
+        "workload": "ramp",
+        "hpa_target_cpu": 50,
+        "hpa_max_replicas": 10,
+        "db_pool_size": 50,
+        "violation_rows": 60,
+        "first_violating_second": 20,
+        "peak_replicas": 10,
+        "peak_demand": 60.0,
+        "slo_violations": 0
+      },
+      {
+        "workload": "ramp",
+        "hpa_target_cpu": 70,
+        "hpa_max_replicas": 10,
+        "db_pool_size": 50,
+        "violation_rows": 20,
+        "first_violating_second": 30,
+        "peak_replicas": 10,
+        "peak_demand": 60.0,
+        "slo_violations": 0
+      },
+      {
+        "workload": "sinusoidal",
+        "hpa_target_cpu": 50,
+        "hpa_max_replicas": 10,
+        "db_pool_size": 50,
+        "violation_rows": 60,
+        "first_violating_second": 20,
+        "peak_replicas": 10,
+        "peak_demand": 60.0,
+        "slo_violations": 0
+      },
+      {
+        "workload": "sinusoidal",
+        "hpa_target_cpu": 70,
+        "hpa_max_replicas": 10,
+        "db_pool_size": 50,
+        "violation_rows": 30,
+        "first_violating_second": 25,
+        "peak_replicas": 9,
+        "peak_demand": 54.0,
+        "slo_violations": 0
+      }
+    ],
+    "causal_actions": [
+      {
+        "action": "scale_up 8->10 at t=20s (CPU 88.4% vs target 50%, max 10)",
+        "violating_rows": 40
+      },
+      {
+        "action": "scale_up 9->10 at t=25s (CPU 78.9% vs target 50%, max 10)",
+        "violating_rows": 30
+      },
+      {
+        "action": "scale_up 8->10 at t=20s (CPU 88.8% vs target 50%, max 10)",
+        "violating_rows": 20
+      },
+      {
+        "action": "scale_up 5->10 at t=20s (CPU 91.2% vs target 50%, max 10)",
+        "violating_rows": 20
+      },
+      {
+        "action": "scale_up 9->10 at t=25s (CPU 61.0% vs target 50%, max 10)",
+        "violating_rows": 15
+      },
+      {
+        "action": "scale_up 9->10 at t=25s (CPU 59.7% vs target 50%, max 10)",
+        "violating_rows": 15
+      },
+      {
+        "action": "scale_up 9->10 at t=25s (CPU 55.7% vs target 50%, max 10)",
+        "violating_rows": 15
+      },
+      {
+        "action": "scale_up 7->10 at t=25s (CPU 94.9% vs target 70%, max 10)",
+        "violating_rows": 15
+      },
+      {
+        "action": "scale_up 7->10 at t=25s (CPU 94.3% vs target 70%, max 10)",
+        "violating_rows": 15
+      },
+      {
+        "action": "scale_up 7->10 at t=25s (CPU 95.4% vs target 70%, max 10)",
+        "violating_rows": 15
+      },
+      {
+        "action": "scale_up 6->9 at t=25s (CPU 95.8% vs target 70%, max 10)",
+        "violating_rows": 15
+      },
+      {
+        "action": "scale_up 6->9 at t=25s (CPU 94.0% vs target 70%, max 10)",
+        "violating_rows": 15
+      },
+      {
+        "action": "scale_up 7->9 at t=20s (CPU 62.8% vs target 50%, max 10)",
+        "violating_rows": 5
+      },
+      {
+        "action": "scale_up 7->9 at t=20s (CPU 61.3% vs target 50%, max 10)",
+        "violating_rows": 5
+      },
+      {
+        "action": "scale_up 7->9 at t=20s (CPU 60.8% vs target 50%, max 10)",
+        "violating_rows": 5
+      },
+      {
+        "action": "scale_up 5->9 at t=20s (CPU 89.2% vs target 50%, max 10)",
+        "violating_rows": 5
+      },
+      {
+        "action": "scale_up 5->9 at t=20s (CPU 87.4% vs target 50%, max 10)",
+        "violating_rows": 5
+      },
+      {
+        "action": "scale_up 7->9 at t=30s (CPU 80.8% vs target 70%, max 10)",
+        "violating_rows": 5
+      },
+      {
+        "action": "scale_up 9->10 at t=35s (CPU 75.0% vs target 70%, max 10)",
+        "violating_rows": 5
+      },
+      {
+        "action": "scale_up 8->10 at t=35s (CPU 80.1% vs target 70%, max 10)",
+        "violating_rows": 5
+      },
+      {
+        "action": "scale_up 8->9 at t=35s (CPU 77.5% vs target 70%, max 10)",
+        "violating_rows": 5
+      }
+    ],
+    "examples": [
+      {
+        "run_id": "hpa_ramp_50_10_50_r0",
+        "split": "train",
+        "workload": "ramp",
+        "hpa_target_cpu": 50,
+        "hpa_max_replicas": 10,
+        "db_pool_size": 50,
+        "second": 20,
+        "phase": "transition",
+        "replicas": 9,
+        "connection_demand": 54.0,
+        "connection_excess": 4.0,
+        "p95_latency_ms": 41.1,
+        "slo_violated": false,
+        "caused_by": {
+          "event_type": "scale_up",
+          "second": 20,
+          "from_replicas": 7,
+          "to_replicas": 9,
+          "cpu_utilization_pct": 62.8,
+          "hpa_target_cpu": 50,
+          "hpa_max_replicas": 10
+        }
+      },
+      {
+        "run_id": "hpa_ramp_50_10_50_r0",
+        "split": "train",
+        "workload": "ramp",
+        "hpa_target_cpu": 50,
+        "hpa_max_replicas": 10,
+        "db_pool_size": 50,
+        "second": 21,
+        "phase": "transition",
+        "replicas": 9,
+        "connection_demand": 54.0,
+        "connection_excess": 4.0,
+        "p95_latency_ms": 33.5,
+        "slo_violated": false,
+        "caused_by": {
+          "event_type": "scale_up",
+          "second": 20,
+          "from_replicas": 7,
+          "to_replicas": 9,
+          "cpu_utilization_pct": 62.8,
+          "hpa_target_cpu": 50,
+          "hpa_max_replicas": 10
+        }
+      },
+      {
+        "run_id": "hpa_ramp_50_10_50_r0",
+        "split": "train",
+        "workload": "ramp",
+        "hpa_target_cpu": 50,
+        "hpa_max_replicas": 10,
+        "db_pool_size": 50,
+        "second": 22,
+        "phase": "transition",
+        "replicas": 9,
+        "connection_demand": 54.0,
+        "connection_excess": 4.0,
+        "p95_latency_ms": 30.6,
+        "slo_violated": false,
+        "caused_by": {
+          "event_type": "scale_up",
+          "second": 20,
+          "from_replicas": 7,
+          "to_replicas": 9,
+          "cpu_utilization_pct": 62.8,
+          "hpa_target_cpu": 50,
+          "hpa_max_replicas": 10
+        }
+      },
+      {
+        "run_id": "hpa_ramp_50_10_50_r0",
+        "split": "train",
+        "workload": "ramp",
+        "hpa_target_cpu": 50,
+        "hpa_max_replicas": 10,
+        "db_pool_size": 50,
+        "second": 23,
+        "phase": "transition",
+        "replicas": 9,
+        "connection_demand": 54.0,
+        "connection_excess": 4.0,
+        "p95_latency_ms": 34.7,
+        "slo_violated": false,
+        "caused_by": {
+          "event_type": "scale_up",
+          "second": 20,
+          "from_replicas": 7,
+          "to_replicas": 9,
+          "cpu_utilization_pct": 62.8,
+          "hpa_target_cpu": 50,
+          "hpa_max_replicas": 10
+        }
+      },
+      {
+        "run_id": "hpa_ramp_50_10_50_r0",
+        "split": "train",
+        "workload": "ramp",
+        "hpa_target_cpu": 50,
+        "hpa_max_replicas": 10,
+        "db_pool_size": 50,
+        "second": 24,
+        "phase": "steady",
+        "replicas": 9,
+        "connection_demand": 54.0,
+        "connection_excess": 4.0,
+        "p95_latency_ms": 35.5,
+        "slo_violated": false,
+        "caused_by": {
+          "event_type": "scale_up",
+          "second": 20,
+          "from_replicas": 7,
+          "to_replicas": 9,
+          "cpu_utilization_pct": 62.8,
+          "hpa_target_cpu": 50,
+          "hpa_max_replicas": 10
+        }
+      },
+      {
+        "run_id": "hpa_ramp_50_10_50_r0",
+        "split": "train",
+        "workload": "ramp",
+        "hpa_target_cpu": 50,
+        "hpa_max_replicas": 10,
+        "db_pool_size": 50,
+        "second": 25,
+        "phase": "transition",
+        "replicas": 10,
+        "connection_demand": 60.0,
+        "connection_excess": 10.0,
+        "p95_latency_ms": 36.9,
+        "slo_violated": false,
+        "caused_by": {
+          "event_type": "scale_up",
+          "second": 25,
+          "from_replicas": 9,
+          "to_replicas": 10,
+          "cpu_utilization_pct": 61.0,
+          "hpa_target_cpu": 50,
+          "hpa_max_replicas": 10
+        }
+      },
+      {
+        "run_id": "hpa_ramp_50_10_50_r0",
+        "split": "train",
+        "workload": "ramp",
+        "hpa_target_cpu": 50,
+        "hpa_max_replicas": 10,
+        "db_pool_size": 50,
+        "second": 26,
+        "phase": "transition",
+        "replicas": 10,
+        "connection_demand": 60.0,
+        "connection_excess": 10.0,
+        "p95_latency_ms": 34.9,
+        "slo_violated": false,
+        "caused_by": {
+          "event_type": "scale_up",
+          "second": 25,
+          "from_replicas": 9,
+          "to_replicas": 10,
+          "cpu_utilization_pct": 61.0,
+          "hpa_target_cpu": 50,
+          "hpa_max_replicas": 10
+        }
+      },
+      {
+        "run_id": "hpa_ramp_50_10_50_r0",
+        "split": "train",
+        "workload": "ramp",
+        "hpa_target_cpu": 50,
+        "hpa_max_replicas": 10,
+        "db_pool_size": 50,
+        "second": 27,
+        "phase": "transition",
+        "replicas": 10,
+        "connection_demand": 60.0,
+        "connection_excess": 10.0,
+        "p95_latency_ms": 35.0,
+        "slo_violated": false,
+        "caused_by": {
+          "event_type": "scale_up",
+          "second": 25,
+          "from_replicas": 9,
+          "to_replicas": 10,
+          "cpu_utilization_pct": 61.0,
+          "hpa_target_cpu": 50,
+          "hpa_max_replicas": 10
+        }
+      },
+      {
+        "run_id": "hpa_ramp_50_10_50_r0",
+        "split": "train",
+        "workload": "ramp",
+        "hpa_target_cpu": 50,
+        "hpa_max_replicas": 10,
+        "db_pool_size": 50,
+        "second": 28,
+        "phase": "transition",
+        "replicas": 10,
+        "connection_demand": 60.0,
+        "connection_excess": 10.0,
+        "p95_latency_ms": 34.9,
+        "slo_violated": false,
+        "caused_by": {
+          "event_type": "scale_up",
+          "second": 25,
+          "from_replicas": 9,
+          "to_replicas": 10,
+          "cpu_utilization_pct": 61.0,
+          "hpa_target_cpu": 50,
+          "hpa_max_replicas": 10
+        }
+      },
+      {
+        "run_id": "hpa_ramp_50_10_50_r0",
+        "split": "train",
+        "workload": "ramp",
+        "hpa_target_cpu": 50,
+        "hpa_max_replicas": 10,
+        "db_pool_size": 50,
+        "second": 29,
+        "phase": "steady",
+        "replicas": 10,
+        "connection_demand": 60.0,
+        "connection_excess": 10.0,
+        "p95_latency_ms": 36.2,
+        "slo_violated": false,
+        "caused_by": {
+          "event_type": "scale_up",
+          "second": 25,
+          "from_replicas": 9,
+          "to_replicas": 10,
+          "cpu_utilization_pct": 61.0,
+          "hpa_target_cpu": 50,
+          "hpa_max_replicas": 10
+        }
+      }
+    ],
+    "note": "HPA scaled replicas past the pool's connection budget. The queuing simulator clamps active connections at the pool size, so a structural connection violation is a configuration-level failure and does not automatically appear as a p95 latency violation."
+  },
+  "refits": [
+    {
+      "constraint_id": "C02",
+      "experiments_used": 0,
+      "ci_width_before": 0.0,
+      "ci_width_after": 0.0,
+      "target_ci_width": 0.0069,
+      "budget_exhausted": false,
+      "bound_after": {
+        "statistic": "score",
+        "comparator": ">",
+        "old_bound": 0.4311,
+        "new_bound": 0.3469,
+        "ci_low": 0.345,
+        "ci_high": 0.3469,
+        "f1": 0.8207,
+        "precision": 0.7029,
+        "recall": 0.9858,
+        "rows_used": 2329,
+        "estimable": true,
+        "note": "bound is on the rule's linear score, not a single variable"
+      },
+      "history": []
+    },
+    {
+      "constraint_id": "C03",
+      "experiments_used": 3,
+      "ci_width_before": 0.04,
+      "ci_width_after": 0.0,
+      "target_ci_width": 0.0013,
+      "budget_exhausted": false,
+      "bound_after": {
+        "statistic": "score",
+        "comparator": ">",
+        "old_bound": 0.2423,
+        "new_bound": 0.0671,
+        "ci_low": 0.0671,
+        "ci_high": 0.0671,
+        "f1": 0.8233,
+        "precision": 0.7958,
+        "recall": 0.8527,
+        "rows_used": 2406,
+        "estimable": true,
+        "note": "bound is on the rule's linear score, not a single variable"
+      },
+      "history": [
+        {
+          "experiment": 1,
+          "selected_config": {
+            "hpa_target_cpu": 50,
+            "hpa_max_replicas": 4,
+            "db_pool_size": 50,
+            "workload": "flash_sale"
+          },
+          "gp_uncertainty": 238.34,
+          "gp_predicted_p95": 399.0,
+          "bound_after": {
+            "statistic": "score",
+            "comparator": ">",
+            "old_bound": 0.2423,
+            "new_bound": 0.0671,
+            "ci_low": 0.0315,
+            "ci_high": 0.0671,
+            "f1": 0.8105,
+            "precision": 0.7815,
+            "recall": 0.8416,
+            "rows_used": 2356,
+            "estimable": true,
+            "note": "bound is on the rule's linear score, not a single variable"
+          }
+        },
+        {
+          "experiment": 2,
+          "selected_config": {
+            "hpa_target_cpu": 50,
+            "hpa_max_replicas": 6,
+            "db_pool_size": 100,
+            "workload": "flash_sale"
+          },
+          "gp_uncertainty": 204.89,
+          "gp_predicted_p95": 505.6,
+          "bound_after": {
+            "statistic": "score",
+            "comparator": ">",
+            "old_bound": 0.2423,
+            "new_bound": 0.0671,
+            "ci_low": 0.0315,
+            "ci_high": 0.0671,
+            "f1": 0.8166,
+            "precision": 0.7883,
+            "recall": 0.8469,
+            "rows_used": 2379,
+            "estimable": true,
+            "note": "bound is on the rule's linear score, not a single variable"
+          }
+        },
+        {
+          "experiment": 3,
+          "selected_config": {
+            "hpa_target_cpu": 50,
+            "hpa_max_replicas": 4,
+            "db_pool_size": 50,
+            "workload": "flash_sale"
+          },
+          "gp_uncertainty": 211.54,
+          "gp_predicted_p95": 515.2,
+          "bound_after": {
+            "statistic": "score",
+            "comparator": ">",
+            "old_bound": 0.2423,
+            "new_bound": 0.0671,
+            "ci_low": 0.0671,
+            "ci_high": 0.0671,
+            "f1": 0.8233,
+            "precision": 0.7958,
+            "recall": 0.8527,
+            "rows_used": 2406,
+            "estimable": true,
+            "note": "bound is on the rule's linear score, not a single variable"
+          }
+        }
+      ]
+    },
+    {
+      "constraint_id": "C04",
+      "experiments_used": 5,
+      "ci_width_before": 0.03,
+      "ci_width_after": 0.03,
+      "target_ci_width": 0.0031,
+      "budget_exhausted": true,
+      "bound_after": {
+        "statistic": "score",
+        "comparator": ">",
+        "old_bound": 0.3178,
+        "new_bound": 0.1814,
+        "ci_low": 0.156,
+        "ci_high": 0.1814,
+        "f1": 0.8313,
+        "precision": 0.8024,
+        "recall": 0.8624,
+        "rows_used": 2456,
+        "estimable": true,
+        "note": "bound is on the rule's linear score, not a single variable"
+      },
+      "history": [
+        {
+          "experiment": 1,
+          "selected_config": {
+            "hpa_target_cpu": 50,
+            "hpa_max_replicas": 4,
+            "db_pool_size": 50,
+            "workload": "flash_sale"
+          },
+          "gp_uncertainty": 238.34,
+          "gp_predicted_p95": 399.0,
+          "bound_after": {
+            "statistic": "score",
+            "comparator": ">",
+            "old_bound": 0.3178,
+            "new_bound": 0.156,
+            "ci_low": 0.156,
+            "ci_high": 0.1814,
+            "f1": 0.8074,
+            "precision": 0.6834,
+            "recall": 0.9864,
+            "rows_used": 2356,
+            "estimable": true,
+            "note": "bound is on the rule's linear score, not a single variable"
+          }
+        },
+        {
+          "experiment": 2,
+          "selected_config": {
+            "hpa_target_cpu": 50,
+            "hpa_max_replicas": 6,
+            "db_pool_size": 100,
+            "workload": "flash_sale"
+          },
+          "gp_uncertainty": 204.89,
+          "gp_predicted_p95": 505.6,
+          "bound_after": {
+            "statistic": "score",
+            "comparator": ">",
+            "old_bound": 0.3178,
+            "new_bound": 0.1814,
+            "ci_low": 0.156,
+            "ci_high": 0.1814,
+            "f1": 0.8132,
+            "precision": 0.782,
+            "recall": 0.8469,
+            "rows_used": 2379,
+            "estimable": true,
+            "note": "bound is on the rule's linear score, not a single variable"
+          }
+        },
+        {
+          "experiment": 3,
+          "selected_config": {
+            "hpa_target_cpu": 50,
+            "hpa_max_replicas": 4,
+            "db_pool_size": 50,
+            "workload": "flash_sale"
+          },
+          "gp_uncertainty": 211.54,
+          "gp_predicted_p95": 515.2,
+          "bound_after": {
+            "statistic": "score",
+            "comparator": ">",
+            "old_bound": 0.3178,
+            "new_bound": 0.1814,
+            "ci_low": 0.156,
+            "ci_high": 0.1814,
+            "f1": 0.82,
+            "precision": 0.7896,
+            "recall": 0.8527,
+            "rows_used": 2406,
+            "estimable": true,
+            "note": "bound is on the rule's linear score, not a single variable"
+          }
+        },
+        {
+          "experiment": 4,
+          "selected_config": {
+            "hpa_target_cpu": 50,
+            "hpa_max_replicas": 4,
+            "db_pool_size": 50,
+            "workload": "flash_sale"
+          },
+          "gp_uncertainty": 220.32,
+          "gp_predicted_p95": 399.3,
+          "bound_after": {
+            "statistic": "score",
+            "comparator": ">",
+            "old_bound": 0.3178,
+            "new_bound": 0.1814,
+            "ci_low": 0.156,
+            "ci_high": 0.1814,
+            "f1": 0.8263,
+            "precision": 0.7967,
+            "recall": 0.8581,
+            "rows_used": 2433,
+            "estimable": true,
+            "note": "bound is on the rule's linear score, not a single variable"
+          }
+        },
+        {
+          "experiment": 5,
+          "selected_config": {
+            "hpa_target_cpu": 50,
+            "hpa_max_replicas": 6,
+            "db_pool_size": 100,
+            "workload": "flash_sale"
+          },
+          "gp_uncertainty": 229.84,
+          "gp_predicted_p95": 527.4,
+          "bound_after": {
+            "statistic": "score",
+            "comparator": ">",
+            "old_bound": 0.3178,
+            "new_bound": 0.1814,
+            "ci_low": 0.156,
+            "ci_high": 0.1814,
+            "f1": 0.8313,
+            "precision": 0.8024,
+            "recall": 0.8624,
+            "rows_used": 2456,
+            "estimable": true,
+            "note": "bound is on the rule's linear score, not a single variable"
+          }
+        }
+      ]
+    }
+  ]
+}
