@@ -1,0 +1,274 @@
+{
+  "flash_sale": {
+    "Fixed": {
+      "avg_p95_latency_ms": {
+        "t_stat": -298.41,
+        "p_value": 0.0,
+        "significance": "***"
+      },
+      "avg_error_rate_pct": {
+        "t_stat": -238.956,
+        "p_value": 0.0,
+        "significance": "***"
+      },
+      "slo_violation_pct": {
+        "t_stat": -198.749,
+        "p_value": 0.0,
+        "significance": "***"
+      },
+      "hourly_cost_runrate": {
+        "t_stat": 62.289,
+        "p_value": 0.0,
+        "significance": "***"
+      }
+    },
+    "HPA": {
+      "avg_p95_latency_ms": {
+        "t_stat": -64.385,
+        "p_value": 0.0,
+        "significance": "***"
+      },
+      "avg_error_rate_pct": {
+        "t_stat": -26.05,
+        "p_value": 0.0,
+        "significance": "***"
+      },
+      "slo_violation_pct": {
+        "t_stat": -202.33,
+        "p_value": 0.0,
+        "significance": "***"
+      },
+      "hourly_cost_runrate": {
+        "t_stat": -116.927,
+        "p_value": 0.0,
+        "significance": "***"
+      }
+    },
+    "QueueBacklog": {
+      "avg_p95_latency_ms": {
+        "t_stat": -47.073,
+        "p_value": 0.0,
+        "significance": "***"
+      },
+      "avg_error_rate_pct": {
+        "t_stat": -11.179,
+        "p_value": 0.0,
+        "significance": "***"
+      },
+      "slo_violation_pct": {
+        "t_stat": -169.281,
+        "p_value": 0.0,
+        "significance": "***"
+      },
+      "hourly_cost_runrate": {
+        "t_stat": -26.557,
+        "p_value": 0.0,
+        "significance": "***"
+      }
+    }
+  },
+  "ramp": {
+    "Fixed": {
+      "avg_p95_latency_ms": {
+        "t_stat": -119.746,
+        "p_value": 0.0,
+        "significance": "***"
+      },
+      "avg_error_rate_pct": {
+        "t_stat": -127.255,
+        "p_value": 0.0,
+        "significance": "***"
+      },
+      "slo_violation_pct": {
+        "t_stat": -87.6,
+        "p_value": 0.0,
+        "significance": "***"
+      },
+      "hourly_cost_runrate": {
+        "t_stat": -30.985,
+        "p_value": 0.0,
+        "significance": "***"
+      }
+    },
+    "HPA": {
+      "avg_p95_latency_ms": {
+        "t_stat": 18.08,
+        "p_value": 0.0,
+        "significance": "***"
+      },
+      "avg_error_rate_pct": {
+        "t_stat": 0.0,
+        "p_value": 1.0,
+        "significance": "ns"
+      },
+      "slo_violation_pct": {
+        "t_stat": -79.789,
+        "p_value": 0.0,
+        "significance": "***"
+      },
+      "hourly_cost_runrate": {
+        "t_stat": -105.961,
+        "p_value": 0.0,
+        "significance": "***"
+      }
+    },
+    "QueueBacklog": {
+      "avg_p95_latency_ms": {
+        "t_stat": 0.801,
+        "p_value": 0.4376,
+        "significance": "ns"
+      },
+      "avg_error_rate_pct": {
+        "t_stat": -5.406,
+        "p_value": 0.0004,
+        "significance": "***"
+      },
+      "slo_violation_pct": {
+        "t_stat": -86.837,
+        "p_value": 0.0,
+        "significance": "***"
+      },
+      "hourly_cost_runrate": {
+        "t_stat": -34.757,
+        "p_value": 0.0,
+        "significance": "***"
+      }
+    }
+  },
+  "viral_product": {
+    "Fixed": {
+      "avg_p95_latency_ms": {
+        "t_stat": -209.15,
+        "p_value": 0.0,
+        "significance": "***"
+      },
+      "avg_error_rate_pct": {
+        "t_stat": -217.627,
+        "p_value": 0.0,
+        "significance": "***"
+      },
+      "slo_violation_pct": {
+        "t_stat": -138.028,
+        "p_value": 0.0,
+        "significance": "***"
+      },
+      "hourly_cost_runrate": {
+        "t_stat": -24.96,
+        "p_value": 0.0,
+        "significance": "***"
+      }
+    },
+    "HPA": {
+      "avg_p95_latency_ms": {
+        "t_stat": 28.394,
+        "p_value": 0.0,
+        "significance": "***"
+      },
+      "avg_error_rate_pct": {
+        "t_stat": 0.0,
+        "p_value": 1.0,
+        "significance": "ns"
+      },
+      "slo_violation_pct": {
+        "t_stat": -124.817,
+        "p_value": 0.0,
+        "significance": "***"
+      },
+      "hourly_cost_runrate": {
+        "t_stat": -119.675,
+        "p_value": 0.0,
+        "significance": "***"
+      }
+    },
+    "QueueBacklog": {
+      "avg_p95_latency_ms": {
+        "t_stat": 3.852,
+        "p_value": 0.0016,
+        "significance": "**"
+      },
+      "avg_error_rate_pct": {
+        "t_stat": -7.84,
+        "p_value": 0.0,
+        "significance": "***"
+      },
+      "slo_violation_pct": {
+        "t_stat": -126.656,
+        "p_value": 0.0,
+        "significance": "***"
+      },
+      "hourly_cost_runrate": {
+        "t_stat": -22.776,
+        "p_value": 0.0,
+        "significance": "***"
+      }
+    }
+  },
+  "slow_payment_api": {
+    "Fixed": {
+      "avg_p95_latency_ms": {
+        "t_stat": -353.711,
+        "p_value": 0.0,
+        "significance": "***"
+      },
+      "avg_error_rate_pct": {
+        "t_stat": -231.486,
+        "p_value": 0.0,
+        "significance": "***"
+      },
+      "slo_violation_pct": {
+        "t_stat": -Infinity,
+        "p_value": 0.0,
+        "significance": "***"
+      },
+      "hourly_cost_runrate": {
+        "t_stat": 128.326,
+        "p_value": 0.0,
+        "significance": "***"
+      }
+    },
+    "HPA": {
+      "avg_p95_latency_ms": {
+        "t_stat": -87.292,
+        "p_value": 0.0,
+        "significance": "***"
+      },
+      "avg_error_rate_pct": {
+        "t_stat": -10.522,
+        "p_value": 0.0,
+        "significance": "***"
+      },
+      "slo_violation_pct": {
+        "t_stat": -Infinity,
+        "p_value": 0.0,
+        "significance": "***"
+      },
+      "hourly_cost_runrate": {
+        "t_stat": -332.537,
+        "p_value": 0.0,
+        "significance": "***"
+      }
+    },
+    "QueueBacklog": {
+      "avg_p95_latency_ms": {
+        "t_stat": -78.648,
+        "p_value": 0.0,
+        "significance": "***"
+      },
+      "avg_error_rate_pct": {
+        "t_stat": -9.857,
+        "p_value": 0.0,
+        "significance": "***"
+      },
+      "slo_violation_pct": {
+        "t_stat": -Infinity,
+        "p_value": 0.0,
+        "significance": "***"
+      },
+      "hourly_cost_runrate": {
+        "t_stat": -26.402,
+        "p_value": 0.0,
+        "significance": "***"
+      }
+    }
+  }
+}

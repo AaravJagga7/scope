@@ -1,0 +1,21 @@
+\begin{table}[htbp]
+\centering
+\caption{Strategy Comparison — Viral Product Profile}
+\label{tab:comparison_viral_product}
+\begin{tabular}{lcccc}
+\toprule
+Metric & Fixed & HPA & Queue-based & SCOPE-X \\
+\midrule
+Mean p95 (ms) & $775.5 \pm 5.4$ & $303.9 \pm 3.8$ & $341.8 \pm 5.7$ & $\textbf{349.9 \pm 3.5}$ \\
+Peak p95 (ms) & $1766.0 \pm 45.9$ & $653.9 \pm 46.3$ & $1464.1 \pm 206.7$ & $\textbf{644.7 \pm 133.0}$ \\
+Error (%) & $8.88 \pm 0.13$ & $0.041 \pm 0.006$ & $0.421 \pm 0.153$ & $\textbf{0.041 \pm 0.006}$ \\
+SLO Viol (%) & $49.9 \pm 1.0$ & $42.4 \pm 0.9$ & $44.8 \pm 1.0$ & $\textbf{0.667 \pm 0.527}$ \\
+Cost (\$/hr) & $0.280 \pm 0.000$ & $0.496 \pm 0.006$ & $0.544 \pm 0.039$ & $\textbf{0.267 \pm 0.002}$ \\
+Throughput (%) & $100.0 \pm 0.0$ & $100.0 \pm 0.0$ & $100.0 \pm 0.0$ & $\textbf{100.0 \pm 0.0}$ \\
+Replica-min & $4.00 \pm 0.00$ & $7.32 \pm 0.09$ & $8.07 \pm 0.59$ & $\textbf{3.23 \pm 0.03}$ \\
+Recovery (s) & $60.4 \pm 1.1$ & $52.9 \pm 2.2$ & $55.2 \pm 2.1$ & $\textbf{0.700 \pm 0.483}$ \\
+\midrule
+\textit{vs SCOPE-X (p-val)} & 0.0000*** & 0.0000*** & 0.0016** & — \\
+\bottomrule
+\end{tabular}
+\end{table}

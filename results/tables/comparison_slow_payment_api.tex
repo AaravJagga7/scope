@@ -1,0 +1,21 @@
+\begin{table}[htbp]
+\centering
+\caption{Strategy Comparison — Slow Payment Api Profile}
+\label{tab:comparison_slow_payment_api}
+\begin{tabular}{lcccc}
+\toprule
+Metric & Fixed & HPA & Queue-based & SCOPE-X \\
+\midrule
+Mean p95 (ms) & $1062.9 \pm 4.7$ & $468.4 \pm 0.9$ & $504.9 \pm 4.7$ & $\textbf{344.0 \pm 4.4}$ \\
+Peak p95 (ms) & $1494.6 \pm 30.2$ & $1129.6 \pm 62.7$ & $1313.8 \pm 66.3$ & $\textbf{465.6 \pm 3.1}$ \\
+Error (%) & $13.7 \pm 0.2$ & $0.123 \pm 0.024$ & $0.571 \pm 0.170$ & $\textbf{0.041 \pm 0.006}$ \\
+SLO Viol (%) & $79.2 \pm 0.0$ & $79.2 \pm 0.0$ & $79.2 \pm 0.0$ & $\textbf{0.000 \pm 0.000}$ \\
+Cost (\$/hr) & $0.280 \pm 0.000$ & $0.579 \pm 0.002$ & $0.648 \pm 0.040$ & $\textbf{0.313 \pm 0.001}$ \\
+Throughput (%) & $100.0 \pm 0.0$ & $100.0 \pm 0.0$ & $100.0 \pm 0.0$ & $\textbf{100.0 \pm 0.0}$ \\
+Replica-min & $4.00 \pm 0.00$ & $8.59 \pm 0.04$ & $9.66 \pm 0.62$ & $\textbf{3.58 \pm 0.00}$ \\
+Recovery (s) & $95.0 \pm 0.0$ & $95.0 \pm 0.0$ & $95.0 \pm 0.0$ & $\textbf{0.000 \pm 0.000}$ \\
+\midrule
+\textit{vs SCOPE-X (p-val)} & 0.0000*** & 0.0000*** & 0.0000*** & — \\
+\bottomrule
+\end{tabular}
+\end{table}

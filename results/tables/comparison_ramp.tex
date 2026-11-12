@@ -1,0 +1,21 @@
+\begin{table}[htbp]
+\centering
+\caption{Strategy Comparison — Ramp Profile}
+\label{tab:comparison_ramp}
+\begin{tabular}{lcccc}
+\toprule
+Metric & Fixed & HPA & Queue-based & SCOPE-X \\
+\midrule
+Mean p95 (ms) & $662.4 \pm 7.5$ & $292.4 \pm 7.4$ & $338.1 \pm 8.4$ & $\textbf{340.4 \pm 3.9}$ \\
+Peak p95 (ms) & $1695.5 \pm 67.9$ & $623.8 \pm 11.2$ & $1328.9 \pm 233.2$ & $\textbf{649.4 \pm 140.4}$ \\
+Error (%) & $6.70 \pm 0.17$ & $0.041 \pm 0.006$ & $0.322 \pm 0.164$ & $\textbf{0.041 \pm 0.006}$ \\
+SLO Viol (%) & $49.7 \pm 1.5$ & $38.4 \pm 1.2$ & $42.5 \pm 1.2$ & $\textbf{1.00 \pm 0.86}$ \\
+Cost (\$/hr) & $0.280 \pm 0.000$ & $0.478 \pm 0.006$ & $0.466 \pm 0.018$ & $\textbf{0.264 \pm 0.002}$ \\
+Throughput (%) & $100.0 \pm 0.0$ & $100.0 \pm 0.0$ & $100.0 \pm 0.0$ & $\textbf{100.0 \pm 0.0}$ \\
+Replica-min & $4.00 \pm 0.00$ & $7.05 \pm 0.10$ & $6.87 \pm 0.28$ & $\textbf{3.20 \pm 0.03}$ \\
+Recovery (s) & $62.3 \pm 2.5$ & $49.4 \pm 2.3$ & $59.4 \pm 2.7$ & $\textbf{3.80 \pm 5.27}$ \\
+\midrule
+\textit{vs SCOPE-X (p-val)} & 0.0000*** & 0.0000*** & 0.4376ns & — \\
+\bottomrule
+\end{tabular}
+\end{table}

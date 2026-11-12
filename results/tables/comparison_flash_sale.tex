@@ -1,0 +1,21 @@
+\begin{table}[htbp]
+\centering
+\caption{Strategy Comparison — Flash Sale Profile}
+\label{tab:comparison_flash_sale}
+\begin{tabular}{lcccc}
+\toprule
+Metric & Fixed & HPA & Queue-based & SCOPE-X \\
+\midrule
+Mean p95 (ms) & $1153.5 \pm 8.0$ & $463.4 \pm 4.4$ & $486.0 \pm 8.1$ & $\textbf{360.4 \pm 2.4}$ \\
+Peak p95 (ms) & $1839.5 \pm 46.5$ & $1445.8 \pm 85.3$ & $1614.7 \pm 97.3$ & $\textbf{613.2 \pm 158.6}$ \\
+Error (%) & $18.3 \pm 0.2$ & $0.423 \pm 0.046$ & $1.10 \pm 0.30$ & $\textbf{0.041 \pm 0.006}$ \\
+SLO Viol (%) & $70.5 \pm 0.7$ & $67.2 \pm 0.6$ & $67.2 \pm 0.9$ & $\textbf{0.667 \pm 0.861}$ \\
+Cost (\$/hr) & $0.280 \pm 0.000$ & $0.615 \pm 0.007$ & $0.725 \pm 0.046$ & $\textbf{0.340 \pm 0.003}$ \\
+Throughput (%) & $100.0 \pm 0.0$ & $100.0 \pm 0.0$ & $100.0 \pm 0.0$ & $\textbf{100.0 \pm 0.0}$ \\
+Replica-min & $4.00 \pm 0.00$ & $9.16 \pm 0.10$ & $10.9 \pm 0.7$ & $\textbf{4.02 \pm 0.05}$ \\
+Recovery (s) & $84.8 \pm 1.1$ & $80.6 \pm 0.7$ & $80.7 \pm 1.1$ & $\textbf{3.00 \pm 5.33}$ \\
+\midrule
+\textit{vs SCOPE-X (p-val)} & 0.0000*** & 0.0000*** & 0.0000*** & — \\
+\bottomrule
+\end{tabular}
+\end{table}
