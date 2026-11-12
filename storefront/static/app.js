@@ -1,22 +1,16 @@
-/* Bazaaro storefront + SCOPE-X Constraint Lab (vanilla JS SPA). */
+/* SCOPE-X Constraint Lab dashboard (vanilla JS SPA). The store backend stays; this UI only tests constraints. */
 (function () {
   const $ = (sel, root = document) => root.querySelector(sel);
   const view = $("#view");
   const C = window.BZCharts;
-  const state = { categories: [], health: null, timers: [], lab: { tab: "live", test: null, poll: null, whatif: null, whatifTimer: null, shieldPoll: null, drop: null } };
-  const S = window.BZShield;
-  /** Interval that is cleared automatically when the shopper navigates away. */
+  const state = { health: null, testbed: null, timers: [], lab: { test: null, poll: null, whatif: null, whatifTimer: null, shieldPoll: null, drop: null } };
+  /** Interval that is cleared automatically when the user changes page. */
   const every = (fn, ms) => { const id = setInterval(fn, ms); state.timers.push(id); return id; };
-  const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
-
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  const money = (v) => "$" + Number(v).toFixed(2);
-  const stars = (r) => "★".repeat(Math.round(r)) + "☆".repeat(5 - Math.round(r));
-  const tile = (p, cls = "") =>
-    `<div class="thumb ${cls}" style="background:linear-gradient(135deg,hsl(${p.hue} 70% 88%),hsl(${(p.hue + 40) % 360} 60% 76%))">${p.discount_pct ? `<span class="badge">-${p.discount_pct}%</span>` : ""}<span>${p.glyph}</span></div>`;
+  const ago = (ts) => { if (!ts) return "–"; const s = Math.max(0, Date.now() / 1000 - ts); return s < 60 ? `${Math.round(s)}s ago` : s < 3600 ? `${Math.round(s / 60)}m ago` : new Date(ts * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); };
 
   async function api(path, opts = {}) {
-    const res = await fetch(path, { headers: { "content-type": "application/json", "x-bz-signals": S.signals() }, credentials: "same-origin", ...opts });
+    const res = await fetch(path, { headers: { "content-type": "application/json" }, credentials: "same-origin", ...opts });
     const text = await res.text();
     let data;
     try { data = text ? JSON.parse(text) : {}; } catch { data = { detail: text }; }
@@ -31,332 +25,193 @@
   }
 
   // ------------------------------------------------------------------ shell
-  async function initShell() {
-    state.categories = await api("/api/categories");
-    $("#search-cat").innerHTML = `<option value="">All</option>` + state.categories.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("");
-    $("#catbar").innerHTML = `<a href="#/s">All products</a><a href="#/s?sort=discount">Today's deals</a>` +
-      state.categories.map((c) => `<a href="#/c/${c.id}" data-cat="${c.id}">${esc(c.name)}</a>`).join("");
-    $("#search-form").addEventListener("submit", (e) => {
-      e.preventDefault();
-      const q = $("#search-q").value.trim(), cat = $("#search-cat").value;
-      location.hash = `#/s?q=${encodeURIComponent(q)}${cat ? "&category=" + cat : ""}`;
-    });
-    $("#health").addEventListener("click", () => { location.hash = "#/lab"; });
-    refreshCartCount();
+  const ICON = {
+    overview: '<rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>',
+    live: '<path d="M3 12h4l3-8 4 16 3-8h4"/>',
+    model: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+    shield: '<path d="M12 3 4 6v6c0 4.5 3.4 8.2 8 9 4.6-.8 8-4.5 8-9V6l-8-3Z"/>',
+    repo: '<ellipse cx="12" cy="5.5" rx="8" ry="2.5"/><path d="M4 5.5v6c0 1.4 3.6 2.5 8 2.5s8-1.1 8-2.5v-6M4 11.5v6c0 1.4 3.6 2.5 8 2.5s8-1.1 8-2.5v-6"/>',
+    server: '<rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/>',
+    gauge: '<path d="M12 14 16 9"/><path d="M3.5 17a9 9 0 1 1 17 0"/>',
+    alert: '<path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17h.01"/>',
+    target: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/>',
+    list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+    sweep: '<path d="M3 20 9 13l4 4 8-11"/><path d="M15 6h6v6"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+  };
+  const icon = (name, size = 18) => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[name]}</svg>`;
+  const PAGES = [
+    { id: "overview", hash: "#/", label: "Overview", title: "Overview", sub: "Live state of the testbed, its constraints and recent runs." },
+    { id: "live", hash: "#/live", label: "Live tests", title: "Live tests", sub: "Run sweeps, spikes and steady load against the local testbed and watch the SLO bound." },
+    { id: "model", hash: "#/model", label: "Model what-if", title: "Model what-if", sub: "Apply stored constraints to cluster configs you can't run on one machine. Simulated." },
+    { id: "shield", hash: "#/shield", label: "Flash-sale shield", title: "Flash-sale shield", sub: "Waiting room, stock reservations and bot defence, plus the off-vs-on drop test." },
+    { id: "repo", hash: "#/repo", label: "Repository", title: "Constraint repository", sub: "Every stored constraint and its validity under static, HPA and vertical scaling." },
+  ];
+
+  function initShell() {
+    $("#nav").innerHTML = PAGES.map((p) => `<a href="${p.hash}" data-page="${p.id}">${icon(p.id)}<span>${p.label}</span></a>`).join("");
     pollHealth();
     setInterval(pollHealth, 3000);
-  }
-
-  async function refreshCartCount() {
-    try {
-      const cart = await api("/api/cart");
-      $("#cart-count").textContent = cart.items.reduce((n, i) => n + i.quantity, 0);
-    } catch { $("#cart-count").textContent = "–"; }
   }
 
   async function pollHealth() {
     try {
       const h = await api("/api/health");
       state.health = h;
-      const dot = $("#health-dot");
-      dot.className = "dot " + h.level;
       const p95 = Math.max(h.store_p95_ms || 0, h.load_test_p95_ms || 0);
-      $("#health-text").textContent = h.testbed !== "running" ? `testbed ${h.testbed}` : `${h.level} · p95 ${p95 ? Math.round(p95) + " ms" : "–"}`;
+      $("#health-dot").className = "dot " + (h.testbed === "running" ? h.level : "off");
+      $("#health-title").textContent = h.testbed === "running" ? `Testbed ${h.level}` : `Testbed ${h.testbed}`;
+      $("#health-sub").textContent = `p95 ${p95 ? Math.round(p95) + " ms" : "–"} · SLO ${h.slo.p95_ms} ms`;
       const banner = $("#banner");
-      if (h.testbed === "running" && h.shield && h.shield.room_open) {
-        banner.className = "banner show drop";
-        $("#banner-text").innerHTML = `🎟️ <b>Flash sale in progress.</b> The waiting room is open${h.shield.queue_length ? ` · ${h.shield.queue_length} shoppers in line` : ""}. Checkout stays fast because shoppers are let in at a steady pace.`;
-      } else if (h.testbed === "running" && h.level !== "healthy") {
-        banner.className = "banner show " + h.level;
-        $("#banner-text").innerHTML = h.level === "degraded"
-          ? `⚠️ <b>Checkout is under pressure.</b> Live p95 ${Math.round(p95)} ms vs SLO ${h.slo.p95_ms} ms${h.error_pct > h.slo.error_pct ? `, errors ${h.error_pct}%` : ""}. Orders may take longer — this is a constraint being hit in real time.`
-          : `High demand right now (p95 ${Math.round(p95)} ms). Checkout is still within SLO.`;
+      if (h.testbed === "running" && h.level === "degraded") {
+        banner.className = "banner show degraded";
+        banner.innerHTML = `<b>SLO violated right now.</b> Live p95 ${Math.round(p95)} ms vs ${h.slo.p95_ms} ms${h.error_pct > h.slo.error_pct ? `, errors ${h.error_pct}% vs ${h.slo.error_pct}%` : ""}.`;
       } else if (h.testbed !== "running") {
         banner.className = "banner show busy";
-        $("#banner-text").textContent = h.testbed === "starting" ? "Starting the store's services…" : `Store services are ${h.testbed}. Open the Constraint Lab to apply a config.`;
-      } else {
-        banner.className = "banner";
-      }
-    } catch { /* ignore */ }
+        banner.textContent = h.testbed === "starting" ? "Starting the testbed services…" : `Testbed is ${h.testbed}. Apply a config on the Live tests page.`;
+      } else banner.className = "banner";
+      if (state.page === "overview") renderQuick();
+    } catch { /* server unreachable; keep last state */ }
   }
 
-  function setActive(hash) {
-    document.querySelectorAll(".catbar a").forEach((a) => a.classList.toggle("active", a.getAttribute("href") === hash));
-    $("#nav-lab").classList.toggle("active", hash.startsWith("#/lab"));
-    $("#nav-cart").classList.toggle("active", hash.startsWith("#/cart"));
+  function setActive(page) {
+    document.querySelectorAll("#nav a").forEach((a) => a.classList.toggle("active", a.dataset.page === page));
+    const p = PAGES.find((x) => x.id === page);
+    $("#page-title").textContent = p ? p.title : "Not found";
+    $("#page-sub").textContent = p ? p.sub : "";
+    document.title = p && page !== "overview" ? `${p.title} · SCOPE-X Lab` : "SCOPE-X Lab";
   }
 
-  // ------------------------------------------------------------------ store views
-  function productCard(p) {
-    return `<div class="card">
-      <a href="#/p/${p.id}">${tile(p)}</a>
-      <div class="card-body">
-        <a href="#/p/${p.id}" class="card-title">${esc(p.name)}</a>
-        <div class="stars" aria-label="${p.rating} out of 5">${stars(p.rating)} <span class="tiny">${p.reviews.toLocaleString()}</span></div>
-        <div class="price">${money(p.price)}${p.list_price > p.price ? `<small>${money(p.list_price)}</small>` : ""}</div>
-        ${p.fast_delivery ? `<div class="fast">⚡ FastLane delivery</div>` : `<div class="tiny">Standard delivery</div>`}
-        <button class="btn" data-add="${p.id}">Add to cart</button>
-      </div></div>`;
-  }
-
-  const addItem = (id, quantity) =>
-    S.guarded(api, () => api("/api/cart/items", { method: "POST", body: JSON.stringify({ product_id: id, quantity }) }));
-
-  function bindAdd(root) {
-    root.querySelectorAll("[data-add]").forEach((b) =>
-      b.addEventListener("click", async () => {
-        b.disabled = true;
-        try { await addItem(b.dataset.add, 1); b.textContent = "Added ✓"; refreshCartCount(); }
-        catch (e) { b.textContent = "Unavailable"; if (e.message !== "left the waiting room") alert(e.message); }
-        setTimeout(() => { b.disabled = false; b.textContent = "Add to cart"; }, 1200);
-      }));
-  }
-
-  async function home() {
-    const [deals, top] = await Promise.all([api("/api/products?sort=discount"), api("/api/products?sort=rating")]);
-    const glyphs = { electronics: "🎧", home: "🍲", books: "📘", fashion: "👟", sports: "⛺", toys: "🧩" };
-    view.innerHTML = `
-      <section class="hero">
-        <div>
-          <h1>Everything you need, delivered fast.</h1>
-          <p>Shop thousands of everyday essentials from independent sellers. Every order on Bazaaro runs through the live SCOPE-X testbed, so you can watch its operational constraints change in the Constraint Lab.</p>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">
-            <a class="btn light" href="#/s?sort=discount">Shop today's deals</a>
-            <a class="btn ghost" style="color:#fff;border-color:rgba(255,255,255,.5)" href="#/lab">Open the Constraint Lab</a>
-          </div>
-        </div>
-        <div class="glyphs">${deals.slice(0, 6).map((p) => `<span>${p.glyph}</span>`).join("")}</div>
-      </section>
-      <a class="drop-strip" href="#/p/bz-701"><span class="g">💿</span><div><b>Drop #1 is live: Lumen One Limited Turntable</b>
-        <div class="small">50 numbered units at $149 (list $299), limit 2 per customer. Protected by the flash-sale shield: waiting room, 5-minute cart holds and bot checks.</div></div><span class="btn light">See the drop</span></a>
-      <h2>Shop by category</h2>
-      <div class="cats">${state.categories.map((c) => `<a class="cat-tile" href="#/c/${c.id}"><span class="g">${glyphs[c.id] || "🛍️"}</span>${esc(c.name)}</a>`).join("")}</div>
-      <h2>Today's deals</h2>
-      <div class="grid">${deals.slice(0, 8).map(productCard).join("")}</div>
-      <h2>Top rated</h2>
-      <div class="grid">${top.slice(0, 4).map(productCard).join("")}</div>`;
-    bindAdd(view);
-  }
-
-  async function listing(params, category) {
-    const q = params.get("q") || "", sort = params.get("sort") || "featured";
-    const cat = category || params.get("category") || "";
-    const maxPrice = params.get("max_price") || "", fast = params.get("fast") === "1";
-    const qs = new URLSearchParams({ q, sort, category: cat, fast: fast ? "true" : "false" });
-    if (maxPrice) qs.set("max_price", maxPrice);
-    const items = await api("/api/products?" + qs);
-    const catName = (state.categories.find((c) => c.id === cat) || {}).name;
-    const go = (patch) => {
-      const p = new URLSearchParams({ q, sort, ...(cat && !category ? { category: cat } : {}), ...(maxPrice ? { max_price: maxPrice } : {}), ...(fast ? { fast: "1" } : {}), ...patch });
-      [...p.keys()].forEach((k) => { if (p.get(k) === "") p.delete(k); });
-      location.hash = (category ? `#/c/${category}` : "#/s") + "?" + p;
-    };
-    view.innerHTML = `
-      <div class="listing">
-        <aside class="filters">
-          <h3>Price</h3>
-          ${["", "50", "100", "200"].map((v) => `<label><input type="radio" name="mp" value="${v}" ${maxPrice === v ? "checked" : ""}/> ${v ? "Up to $" + v : "Any price"}</label>`).join("")}
-          <h3 style="margin-top:14px">Delivery</h3>
-          <label><input type="checkbox" id="f-fast" ${fast ? "checked" : ""}/> ⚡ FastLane only</label>
-        </aside>
-        <section>
-          <div class="toolbar">
-            <div><h1 style="font-size:22px">${q ? `Results for “${esc(q)}”` : esc(catName || "All products")}</h1><span class="muted small">${items.length} item${items.length === 1 ? "" : "s"}</span></div>
-            <label class="small">Sort by
-              <select id="f-sort" style="padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface)">
-                ${[["featured", "Featured"], ["price_asc", "Price: low to high"], ["price_desc", "Price: high to low"], ["rating", "Avg. rating"], ["discount", "Biggest discount"]].map(([v, l]) => `<option value="${v}" ${sort === v ? "selected" : ""}>${l}</option>`).join("")}
-              </select></label>
-          </div>
-          ${items.length ? `<div class="grid">${items.map(productCard).join("")}</div>` : `<div class="panel">No products match. Try a broader search.</div>`}
-        </section>
-      </div>`;
-    view.querySelectorAll('input[name="mp"]').forEach((r) => r.addEventListener("change", () => go({ max_price: r.value })));
-    $("#f-fast").addEventListener("change", (e) => go({ fast: e.target.checked ? "1" : "" }));
-    $("#f-sort").addEventListener("change", (e) => go({ sort: e.target.value }));
-    bindAdd(view);
-  }
-
-  async function productPage(id) {
-    const p = await api(`/api/products/${id}`);
-    const related = (await api(`/api/products?category=${p.category}`)).filter((x) => x.id !== p.id).slice(0, 4);
-    const stock = p.live_stock;
-    const degraded = state.health && state.health.level === "degraded";
-    const eta = new Date(Date.now() + (p.fast_delivery ? 1 : 4) * 864e5).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
-    view.innerHTML = `
-      <div class="pdp">
-        ${tile(p, "big")}
-        <div>
-          <div class="tiny">Sold by ${esc(p.seller)}</div>
-          <h1>${esc(p.name)}</h1>
-          <div class="stars">${stars(p.rating)} <span class="muted small">${p.rating} · ${p.reviews.toLocaleString()} ratings</span></div>
-          <hr style="border:0;border-top:1px solid var(--border);margin:14px 0">
-          <div class="price" style="font-size:28px">${money(p.price)}${p.list_price > p.price ? `<small>List ${money(p.list_price)}</small>` : ""}</div>
-          ${p.discount_pct ? `<div style="color:var(--deal);font-weight:600">You save ${money(p.list_price - p.price)} (${p.discount_pct}%)</div>` : ""}
-          <p>${esc(p.blurb)}</p>
-          ${p.limited ? `<div class="drop-panel"><div class="label-chip drop">limited drop</div>
-            <div class="drop-meter" id="drop-meter"></div>
-            <div class="tiny">Adding to cart reserves your unit${p.max_per_customer > 1 ? "s" : ""} for ${state.health && state.health.shield ? mmss(state.health.shield.hold_ttl_s) : "a few minutes"} when reservations are on. Unpaid holds expire and go back on sale. Limit ${p.max_per_customer} per customer.</div></div>`
-          : `<div class="notice small">📦 Stock is read live from the inventory service: ${stock === null ? "unavailable right now" : `<b>${stock}</b> available`}.</div>`}
-        </div>
-        <aside class="buybox">
-          <div class="price">${money(p.price)}</div>
-          <div class="row"><span>Delivery</span><b>${eta}</b></div>
-          <div class="row"><span>Ships with</span><span>${p.fast_delivery ? "⚡ FastLane" : "Standard"}</span></div>
-          <div style="margin:8px 0;font-weight:600;color:${stock > 10 ? "var(--good)" : stock > 0 ? "var(--deal)" : "var(--bad)"}">${stock === null ? "Stock unknown" : stock > 10 ? "In stock" : stock > 0 ? `Only ${stock} left` : "Out of stock"}</div>
-          ${degraded ? `<div class="notice bad small">Checkout is slower than usual right now (live p95 above SLO).</div>` : ""}
-          <div class="qty">Qty <select id="qty">${[1, 2, 3, 4, 5].slice(0, p.max_per_customer || 5).map((n) => `<option>${n}</option>`).join("")}</select></div>
-          <button class="btn" style="width:100%" id="add" ${stock === 0 ? "disabled" : ""}>Add to cart</button>
-          <button class="btn secondary" style="width:100%;margin-top:8px" id="buy" ${stock === 0 ? "disabled" : ""}>Buy now</button>
-          <div id="buy-msg"></div>
-        </aside>
-      </div>
-      ${related.length ? `<h2>More in this category</h2><div class="grid">${related.map(productCard).join("")}</div>` : ""}`;
-    const add = async () => { await addItem(p.id, +$("#qty").value); refreshCartCount(); };
-    const fail = (err) => { if (err.message !== "left the waiting room") $("#buy-msg").innerHTML = `<div class="notice bad small">${esc(err.message)}</div>`; };
-    $("#add").addEventListener("click", async (e) => { try { await add(); e.target.textContent = "Added ✓"; } catch (err) { fail(err); } });
-    $("#buy").addEventListener("click", async () => { try { await add(); location.hash = "#/checkout"; } catch (err) { fail(err); } });
-    if (p.limited) {
-      const meter = async () => {
-        const el = $("#drop-meter");
-        if (!el) return;
-        let q;
-        try { q = await api(`/api/products/${p.id}`); } catch { return; }
-        const total = Math.max(1, (q.live_stock || 0) + (q.reserved || 0));
-        el.innerHTML = `<div class="dm-bar"><i class="avail" style="width:${100 * (q.live_stock || 0) / Math.max(total, 50)}%"></i><i class="held" style="width:${100 * (q.reserved || 0) / Math.max(total, 50)}%"></i></div>
-          <div class="dm-legend"><span><i class="avail"></i><b>${q.live_stock ?? "–"}</b> available</span><span><i class="held"></i><b>${q.reserved ?? "–"}</b> reserved in carts or checking out</span></div>`;
-      };
-      meter(); every(meter, 2000);
-    }
-    bindAdd(view);
-  }
-
-  async function cartPage() {
-    const cart = await api("/api/cart");
-    const byId = Object.fromEntries((await api("/api/products")).map((p) => [p.id, p]));
-    if (!cart.items.length) {
-      view.innerHTML = `<div class="panel"><h1>Your cart is empty</h1><p class="muted">Find something you like in today's deals.</p><a class="btn" href="#/s?sort=discount">Shop deals</a></div>`;
-      return;
-    }
-    view.innerHTML = `<div class="two">
-      <div class="panel"><h1>Shopping cart</h1>
-        ${cart.items.map((i) => `<div class="cart-line">${byId[i.product_id] ? tile(byId[i.product_id]) : "<div></div>"}<div><a href="#/p/${i.product_id}"><b>${esc(i.product_name)}</b></a><div class="tiny">Qty ${i.quantity} × ${money(i.unit_price)}</div>${cart.reservations ? `<div class="hold" data-hold="${i.product_id}"></div>` : ""}</div><b>${money(i.quantity * i.unit_price)}</b></div>`).join("")}
-        <div id="hold-msg"></div>
-        <button class="btn ghost" id="clear" style="margin-top:12px">Empty cart</button>
-      </div>
-      <aside class="panel"><div class="row" style="display:flex;justify-content:space-between"><span>Subtotal</span><b>${money(cart.total_amount)}</b></div>
-        <a class="btn" href="#/checkout" style="width:100%;margin-top:12px">Proceed to checkout</a></aside></div>`;
-    $("#clear").addEventListener("click", async () => { await api("/api/cart", { method: "DELETE" }); refreshCartCount(); cartPage(); });
-    if (cart.reservations) holdCountdown(cart);
-  }
-
-  /** Live countdown per reserved line; offers to re-reserve once a hold expires. */
-  function holdCountdown(cart) {
-    const deadline = {};
-    const loaded = performance.now();
-    for (const [pid, h] of Object.entries(cart.holds || {})) deadline[pid] = h.seconds_left;
-    const draw = () => {
-      const elapsed = (performance.now() - loaded) / 1000;
-      document.querySelectorAll("[data-hold]").forEach((el) => {
-        const pid = el.dataset.hold, h = (cart.holds || {})[pid];
-        const left = h ? deadline[pid] - elapsed : 0;
-        if (h && left > 0 && h.status !== "expired") {
-          el.className = "hold ok" + (left < 60 ? " soon" : "");
-          el.innerHTML = `⏳ Reserved for you · <b>${mmss(left)}</b>`;
-        } else {
-          el.className = "hold gone";
-          el.innerHTML = `Reservation ${h ? "expired, stock returned to the sale" : "missing"} · <button class="linkbtn" data-rehold>Reserve again</button>`;
-        }
-      });
-      document.querySelectorAll("[data-rehold]").forEach((b) => (b.onclick = async () => {
-        b.disabled = true;
-        try {
-          const r = await S.guarded(api, () => api("/api/cart/rehold", { method: "POST" }));
-          if (r.failed.length) $("#hold-msg").innerHTML = `<div class="notice bad small">Could not re-reserve: ${esc(r.failed.map((f) => f.reason).join("; "))}</div>`;
-          route();
-        } catch (err) { $("#hold-msg").innerHTML = `<div class="notice bad small">${esc(err.message)}</div>`; }
-      }));
-    };
-    draw(); every(draw, 1000);
-  }
-
-  async function checkoutPage() {
-    const cart = await api("/api/cart");
-    if (!cart.items.length) { location.hash = "#/cart"; return; }
-    view.innerHTML = `<div class="two">
-      <div class="panel"><h1>Checkout</h1>
-        <div class="field"><label for="c-name">Full name</label><input id="c-name" value="Guest Shopper"/></div>
-        <div class="field"><label for="c-addr">Delivery address</label><input id="c-addr" value="221 Market Street"/></div>
-        <div class="field"><label for="c-pay">Payment method</label><select id="c-pay"><option value="credit_card">Card (simulated)</option><option value="wallet">Wallet (simulated)</option></select></div>
-        <div class="tiny">The order runs cart validation → inventory reservation → payment → order creation on the live services. No real payment is taken.</div>
-        ${cart.reservations ? `<div class="notice small" id="co-hold">Your items are reserved while you check out.</div>` : ""}
-        <div id="c-msg"></div>
-      </div>
-      <aside class="panel"><h3>Order summary</h3>
-        ${cart.items.map((i) => `<div style="display:flex;justify-content:space-between" class="small"><span>${i.quantity} × ${esc(i.product_name)}</span><span>${money(i.quantity * i.unit_price)}</span></div>`).join("")}
-        <hr style="border:0;border-top:1px solid var(--border)"><div style="display:flex;justify-content:space-between"><b>Total</b><b>${money(cart.total_amount)}</b></div>
-        <button class="btn" id="place" style="width:100%;margin-top:14px">Place order</button></aside></div>`;
-    $("#place").addEventListener("click", async (e) => {
-      e.target.disabled = true; e.target.textContent = "Placing order…";
-      try {
-        const o = await S.guarded(api, () => api("/api/checkout", { method: "POST", body: JSON.stringify({ name: $("#c-name").value, payment_method: $("#c-pay").value }) }));
-        sessionStorage.setItem("bz_last_order", JSON.stringify(o));
-        refreshCartCount();
-        location.hash = `#/order/${o.order_id}`;
-      } catch (err) {
-        const expired = /expired or missing/.test(err.message);
-        $("#c-msg").innerHTML = `<div class="notice bad">Order failed (${err.status || "network"}): ${esc(err.message)}${expired ? ` <a href="#/cart"><b>Review your cart</b></a> to reserve again.` : ""}</div>`;
-        e.target.disabled = false; e.target.textContent = "Try again";
-      }
-    });
-    if (cart.reservations) {
-      const lefts = Object.values(cart.holds || {}).filter((h) => h.seconds_left > 0).map((h) => h.seconds_left);
-      const loaded = performance.now();
-      const draw = () => {
-        const el = $("#co-hold");
-        if (!el) return;
-        const left = lefts.length ? Math.min(...lefts) - (performance.now() - loaded) / 1000 : 0;
-        el.className = "notice small " + (left > 0 ? (left < 60 ? "bad" : "good") : "bad");
-        el.innerHTML = left > 0 ? `⏳ Your items are reserved for <b>${mmss(left)}</b>. Pay before the timer ends or they go back on sale.`
-          : `Your reservation has expired. <a href="#/cart"><b>Go to cart</b></a> to reserve again.`;
-      };
-      draw(); every(draw, 1000);
-    }
-  }
-
-  function orderPage(id) {
-    let o = null;
-    try { o = JSON.parse(sessionStorage.getItem("bz_last_order") || "null"); } catch { o = null; }
-    view.innerHTML = `<div class="panel" style="max-width:640px;margin:0 auto">
-      <h1>✅ Order placed</h1><p class="muted">Order <b>${esc(id)}</b>${o ? ` · total ${money(o.total_amount)}` : ""}</p>
-      ${o ? `<div class="notice good small">Checkout took <b>${o.latency_ms} ms</b> end to end across 4 services (transaction ${esc(o.transaction_id)}, trace ${esc(o.trace_id.slice(0, 12))}…).</div>` : ""}
-      <a class="btn" href="#/">Continue shopping</a> <a class="btn ghost" href="#/lab">See how load changes this</a></div>`;
-  }
-
-  // ------------------------------------------------------------------ lab
   const clsPill = (c) => {
     const key = (c || "untested").replace(/\s*\(.*\)/, "").replace(/\s+/g, "-").replace("violated-by-autoscaler", "violated");
     return `<span class="pill ${key}">${esc(c || "untested")}</span>`;
   };
+  const statusPill = (s) => `<span class="status ${s === "done" ? "ok" : s === "running" ? "run" : s === "error" ? "bad" : ""}">${esc(s)}</span>`;
 
-  async function labPage() {
+  // ------------------------------------------------------------------ overview
+  async function overviewPage() {
     view.innerHTML = `
-      <div class="lab-head">
-        <div><h1>Constraint Lab</h1>
-          <div class="muted">Test the store's operational constraints and watch them move as the infrastructure changes.</div></div>
-        <div class="tabs"><button data-tab="live">Live tests</button><button data-tab="model">Model what-if</button><button data-tab="shield">Flash-sale shield</button><button data-tab="repo">Constraint repository</button></div>
+      <section class="card quick">
+        <div class="card-head"><div><h2>Quick stats</h2><div class="muted small">Live values from the testbed (last 30 s window)</div></div></div>
+        <div class="tiles" id="tiles"></div>
+      </section>
+      <div class="ov-grid">
+        <section class="card">
+          <div class="card-head"><div><h2>Statistics</h2><div class="muted small" id="stat-sub">Checkout p95 per offered load, latest boundary sweep</div></div>
+            <div class="legend-dots"><span><i class="ok"></i>within SLO</span><span><i class="bad"></i>violates SLO</span></div></div>
+          <div id="stat-chart"></div>
+          <div id="stat-note" class="tiny"></div>
+        </section>
+        <section class="card">
+          <div class="card-head"><h2>Testbed services</h2><a class="icon-btn" href="#/live" title="Configure testbed">${icon("server", 16)}</a></div>
+          <div id="svc-list" class="svc-list"><div class="muted small">Loading…</div></div>
+        </section>
       </div>
-      <div id="lab-body"></div>`;
-    view.querySelectorAll("[data-tab]").forEach((b) => b.addEventListener("click", () => { state.lab.tab = b.dataset.tab; renderLabTab(); }));
-    renderLabTab();
+      <section class="card">
+        <div class="card-head"><div><h2>Test runs</h2><div class="muted small">Finished runs on this server (in-memory, last 20)</div></div>
+          <div class="head-actions">
+            <select id="run-filter" aria-label="Filter runs"><option value="">All types</option><option>sweep</option><option>flash</option><option>steady</option><option>drop</option></select>
+            <a class="btn" href="#/live">${icon("plus", 16)} New test</a></div></div>
+        <div class="scroll-x" id="runs"></div>
+      </section>`;
+    $("#run-filter").addEventListener("change", renderRuns);
+    state.constraints = state.constraints || await api("/api/lab/constraints").catch(() => []);
+    await refreshOverview();
+    every(refreshOverview, 2500);
   }
 
-  function renderLabTab() {
-    view.querySelectorAll("[data-tab]").forEach((b) => b.classList.toggle("active", b.dataset.tab === state.lab.tab));
-    clearInterval(state.lab.shieldPoll);
-    if (state.lab.tab === "live") return liveTab();
-    if (state.lab.tab === "model") return modelTab();
-    if (state.lab.tab === "shield") return shieldTab();
-    return repoTab();
+  async function refreshOverview() {
+    if (!$("#tiles")) return;
+    const [tb, hist] = await Promise.all([api("/api/testbed").catch(() => null), api("/api/lab/history").catch(() => [])]);
+    state.testbed = tb; state.history = hist;
+    renderQuick(); renderServices(); renderRuns();
+    await renderStats();
+  }
+
+  function renderQuick() {
+    const el = $("#tiles");
+    if (!el) return;
+    const h = state.health, tb = state.testbed, hist = state.history || [];
+    const p95 = h ? Math.max(h.store_p95_ms || 0, h.load_test_p95_ms || 0) : 0;
+    const sweeps = hist.filter((x) => x.kind === "sweep" && x.result && x.result.observed_bound);
+    const bound = sweeps.length ? sweeps[0].result.observed_bound.last_rps_meeting_slo : null;
+    const stored = (state.constraints || []).length;
+    const alive = tb ? tb.services.filter((s) => s.alive).length : 0;
+    const t = (ic, v, k, cls = "") => `<div class="tile ${cls}"><span class="ic">${icon(ic, 18)}</span><b>${v}</b><span>${k}</span></div>`;
+    el.innerHTML =
+      t("server", tb ? `${alive}/${tb.services.length}` : "–", "services up", tb && tb.state !== "running" ? "warn" : "") +
+      t("gauge", p95 ? Math.round(p95) + "<small>ms</small>" : "–", "live p95", h && p95 > h.slo.p95_ms ? "bad" : "") +
+      t("alert", h ? h.error_pct + "<small>%</small>" : "–", "error rate", h && h.error_pct > h.slo.error_pct ? "bad" : "") +
+      t("target", h ? h.slo.p95_ms + "<small>ms</small>" : "–", `SLO p95 · ≤ ${h ? h.slo.error_pct : 1}% err`, "dark") +
+      t("sweep", bound != null ? bound + "<small>rps</small>" : "–", "last bound meeting SLO") +
+      t("repo", stored || "–", "stored constraints") +
+      t("list", hist.length, "runs this session");
+  }
+
+  function renderServices() {
+    const el = $("#svc-list"), tb = state.testbed;
+    if (!el) return;
+    if (!tb) { el.innerHTML = `<div class="muted small">Testbed unreachable.</div>`; return; }
+    el.innerHTML = tb.services.map((s) => `<div class="svc-row">
+        <span class="avatar">${esc(s.service.slice(0, 1).toUpperCase())}</span>
+        <div><b>${esc(s.service)}</b><div class="tiny">×${s.workers} worker${s.workers === 1 ? "" : "s"} · :${s.port}${s.ready_seconds != null ? ` · ready in ${s.ready_seconds}s` : ""}</div></div>
+        <span class="status ${s.alive ? "ok" : "bad"}">${s.alive ? "Running" : "Down"}</span></div>`).join("") +
+      `<div class="svc-foot tiny">Testbed <b>${esc(tb.state)}</b>${tb.error ? ": " + esc(tb.error) : ""} · ${esc(tb.storage || "")}</div>`;
+  }
+
+  function renderRuns() {
+    const el = $("#runs");
+    if (!el) return;
+    const f = $("#run-filter").value;
+    const rows = (state.history || []).filter((x) => !f || x.kind === f);
+    if (!rows.length) { el.innerHTML = `<div class="empty">No ${f ? f + " " : ""}runs yet. <a href="#/live">Start a test</a>.</div>`; return; }
+    const outcome = (x) => {
+      const r = x.result || {};
+      if (r.observed_bound) return `<code>${esc(r.observed_bound.constraint)}</code>`;
+      if (r.recovered !== undefined) return r.recovered ? "recovered after spike" : "did not recover";
+      if (r.meets_slo !== undefined) return r.meets_slo ? "meets SLO" : "violates SLO";
+      if (r.arms) return r.arms.map((a) => `shield ${a.arm}: ${a.units_to_bots} to bots, ${a.oversold_units} oversold`).join(" · ");
+      return x.status === "error" ? "error" : "–";
+    };
+    el.innerHTML = `<table class="t runs"><tr><th>Run</th><th>Type</th><th>Config</th><th>Outcome</th><th>Finished</th><th>Status</th></tr>
+      ${rows.map((x) => { const c = x.config || {}; return `<tr><td><code>${esc(x.id)}</code></td><td><span class="kind">${esc(x.kind)}</span></td>
+        <td class="tiny">checkout ×${c.checkout_workers ?? "–"} · inv ×${c.inventory_workers ?? "–"} · pay ${c.payment_latency_ms ?? "–"} ms · cache ${c.cache_enabled ? "on" : "off"}</td>
+        <td class="small">${outcome(x)}</td><td class="tiny">${ago(x.finished_at)}</td><td>${statusPill(x.status)}</td></tr>`; }).join("")}</table>`;
+  }
+
+  async function renderStats() {
+    const el = $("#stat-chart");
+    if (!el) return;
+    const slo = state.health ? state.health.slo.p95_ms : 500;
+    const cur = state.lab.test && state.lab.test.status === "running" ? state.lab.test : null;
+    let bars = [], sub, note = "";
+    if (cur) {
+      try { state.lab.test = await api(`/api/lab/tests/${cur.id}`); } catch { /* ignore */ }
+      const s = (state.lab.test.seconds || []).slice(-30);
+      bars = s.map((x) => ({ label: `${Math.round(x.t)}s`, value: x.checkout_p95_ms, tip: `${Math.round(x.checkout_p95_ms)} ms @ ${x.offered_rps} rps` }));
+      sub = `Live: checkout p95 per second, ${state.lab.test.kind} test ${state.lab.test.id}`;
+    } else {
+      const last = (state.history || []).find((x) => x.kind === "sweep" && x.status === "done");
+      if (last) {
+        if (!state.sweepCache || state.sweepCache.id !== last.id) {
+          try { state.sweepCache = await api(`/api/lab/tests/${last.id}`); } catch { state.sweepCache = { id: last.id, steps: [] }; }
+        }
+        bars = (state.sweepCache.steps || []).map((s) => ({ label: `${s.offered_rps}`, value: s.checkout_p95_ms, tip: `${Math.round(s.checkout_p95_ms)} ms · ${s.error_pct}% err` }));
+        sub = `Checkout p95 per offered load (rps), sweep ${last.id}`;
+        const b = last.result.observed_bound;
+        note = b ? `<span class="label-chip live">validated on local testbed</span> ${esc(b.constraint)} · tested ${b.tested_region.rps[0]}–${b.tested_region.rps[1]} rps` : "";
+      } else sub = "No finished sweep yet. Run a boundary sweep on the Live tests page.";
+    }
+    if (!$("#stat-chart")) return;
+    $("#stat-sub").textContent = sub;
+    $("#stat-note").innerHTML = note;
+    C.barChart(el, { bars: bars.map((b) => ({ ...b, color: b.value > slo ? C.css("--bad") : C.css("--ink") })), hLine: { y: slo, label: `SLO ${slo} ms` }, yUnit: " ms", height: 330, empty: "No data yet" });
+  }
+
+  // ------------------------------------------------------------------ lab pages (unchanged logic)
+  function labPage(fn) {
+    view.innerHTML = `<div id="lab-body"></div>`;
+    return fn();
   }
 
   // ---- live
@@ -398,6 +253,9 @@
         </div>
         <div class="stack">
           <div class="kpis" id="t-kpis">${kpi("–", "checkout p95 (last s)")}${kpi("–", "error rate")}${kpi("–", "offered rps")}${kpi("–", "in-flight")}</div>
+          <div class="panel"><h3>Latest result per experiment type <span class="label-chip live">validated on local testbed</span></h3>
+            <div class="tiny" style="margin-bottom:10px">Most recent finished run of each type on this server, at the testbed config it ran with. “Run again” loads that type into the test form.</div>
+            <div id="t-types" class="type-grid"></div></div>
           <div class="panel"><h3>Live per-second telemetry</h3><div id="t-legend"></div><div id="t-chart"></div></div>
           <div class="panel"><h3>Result</h3><div id="t-result" class="small muted">Run a test to see the observed constraint.</div></div>
           <div class="panel"><h3>How the constraint changes across configs</h3>
@@ -424,8 +282,96 @@
     $("#t-run").addEventListener("click", startTest);
     $("#t-cancel").addEventListener("click", async () => { if (state.lab.test) await api(`/api/lab/tests/${state.lab.test.id}/cancel`, { method: "POST" }); });
     renderHistory();
+    renderTypes();
     if (state.lab.test) { renderTest(state.lab.test); if (state.lab.test.status === "running") pollTest(); }
     else drawLive({ seconds: [] });
+  }
+
+  // ---- latest values per experiment type
+  const TYPES = [
+    { kind: "sweep", name: "Boundary sweep", what: "Steps offered load up until the SLO breaks" },
+    { kind: "flash", name: "Flash sale", what: "Baseline → spike → baseline; checks recovery" },
+    { kind: "steady", name: "Steady load", what: "Constant offered load for a fixed duration" },
+    { kind: "drop", name: "Drop test", what: "Limited-stock drop, shield off vs on" },
+  ];
+  async function renderTypes() {
+    const el = $("#t-types");
+    if (!el) return;
+    const hist = await api("/api/lab/history").catch(() => []);
+    state.typeCache = state.typeCache || {};
+    const latest = {};
+    for (const T of TYPES) {
+      const h = hist.find((x) => x.kind === T.kind && x.status === "done");
+      if (!h) continue;
+      if (!state.typeCache[h.id]) { try { state.typeCache[h.id] = await api(`/api/lab/tests/${h.id}`); } catch { state.typeCache[h.id] = { ...h, steps: [], params: {} }; } }
+      latest[T.kind] = { h, t: state.typeCache[h.id] };
+    }
+    if (!$("#t-types")) return;
+    const slo = state.health ? state.health.slo : { p95_ms: 500, error_pct: 1 };
+    const v = (label, value, bad) => `<div class="tv"><span>${label}</span><b class="${bad === true ? "bad" : bad === false ? "ok" : ""}">${value ?? "–"}</b></div>`;
+    const ms = (x) => (x == null ? "–" : Math.round(x) + " ms");
+    const cfgLine = (c) => c ? `checkout ×${c.checkout_workers} · inv ×${c.inventory_workers} · pay ${c.payment_latency_ms} ms · cache ${c.cache_enabled ? "on" : "off"}` : "";
+    const body = (kind, { h, t }) => {
+      const r = h.result || {}, st = t.steps || [], p = t.params || {};
+      if (kind === "sweep") {
+        const b = r.observed_bound || {};
+        const worst = st.length ? Math.max(...st.map((s) => s.checkout_p95_ms)) : null;
+        return v("last rps meeting SLO", b.last_rps_meeting_slo != null ? b.last_rps_meeting_slo + " rps" : "none", b.last_rps_meeting_slo == null) +
+          v("first rps violating SLO", b.first_rps_violating_slo != null ? b.first_rps_violating_slo + " rps" : "none seen", b.first_rps_violating_slo != null) +
+          v("tested region", b.tested_region ? `${b.tested_region.rps[0]}–${b.tested_region.rps[1]} rps` : "–") +
+          v("levels · s/level", `${st.length} · ${p.step_seconds ?? "–"} s`) +
+          v("worst checkout p95", ms(worst), worst != null && worst > slo.p95_ms) +
+          v("client-saturated steps", (b.client_saturated_steps || []).length ? b.client_saturated_steps.join(", ") + " rps" : "none") +
+          `<div class="tconstraint"><code>${esc(b.constraint || "")}</code></div>`;
+      }
+      if (kind === "flash") {
+        const ph = r.phases || {};
+        const f = (k) => ph[k] || st.find((s) => s.phase === k) || {};
+        const b = f("before"), sp = f("spike"), a = f("after");
+        return v("baseline → spike", `${p.base_rps ?? b.offered_rps} → ${p.peak_rps ?? sp.offered_rps} rps`) +
+          v("spike duration", (p.duration ?? "–") + " s") +
+          v("p95 before", ms(b.checkout_p95_ms), b.checkout_p95_ms > slo.p95_ms) +
+          v("p95 during spike", ms(sp.checkout_p95_ms), sp.checkout_p95_ms > slo.p95_ms) +
+          v("p95 after", ms(a.checkout_p95_ms), a.checkout_p95_ms > slo.p95_ms) +
+          v("errors during spike", sp.error_pct != null ? sp.error_pct + "%" : "–", sp.error_pct > slo.error_pct) +
+          v("achieved during spike", sp.achieved_rps != null ? sp.achieved_rps + " rps" : "–") +
+          v("recovered", r.recovered === undefined ? "–" : r.recovered ? "yes" : "no", r.recovered === undefined ? undefined : !r.recovered);
+      }
+      if (kind === "steady") {
+        const s = st[0] || {};
+        return v("offered → achieved", `${s.offered_rps ?? p.rps} → ${s.achieved_rps ?? "–"} rps`) +
+          v("duration", (p.duration ?? "–") + " s") +
+          v("checkout p50", ms(s.checkout_p50_ms)) +
+          v("checkout p95", ms(s.checkout_p95_ms), s.checkout_p95_ms > slo.p95_ms) +
+          v("browse p95", ms(s.browse_p95_ms)) +
+          v("error rate", s.error_pct != null ? s.error_pct + "%" : "–", s.error_pct > slo.error_pct) +
+          v("meets SLO", r.meets_slo === undefined ? "–" : r.meets_slo ? "yes" : "no", r.meets_slo === undefined ? undefined : !r.meets_slo);
+      }
+      const A = r.arms || [];
+      const both = (f) => A.map((a) => `${a.arm}: ${f(a)}`).join(" · ");
+      return v("stock · humans · bots", r.params ? `${r.params.stock} · ${r.params.humans} · ${r.params.bots}` : "–") +
+        v("units to bots", both((a) => `${a.units_to_bots} (${a.bot_share_pct}%)`)) +
+        v("oversold units", both((a) => a.oversold_units)) +
+        v("humans who got one", both((a) => a.human_success_pct + "%")) +
+        v("human checkout p95", both((a) => ms(a.human_checkout_p95_ms))) +
+        v("server errors", both((a) => a.server_error_pct + "%")) +
+        v("max queue", both((a) => a.max_queue));
+    };
+    el.innerHTML = TYPES.map((T) => {
+      const L = latest[T.kind];
+      return `<div class="type-card">
+        <div class="type-top"><div><b>${T.name}</b><div class="tiny">${T.what}</div></div>
+          ${L ? `<span class="tiny">${L.h.id} · ${ago(L.h.finished_at)}</span>` : `<span class="status">not run</span>`}</div>
+        ${L ? `<div class="tvals">${body(T.kind, L)}</div><div class="tiny tcfg">${cfgLine(L.h.config || (L.t.result || {}).testbed_config)}</div>`
+            : `<div class="empty small">No finished ${T.name.toLowerCase()} yet.</div>`}
+        <button class="btn secondary" data-run-type="${T.kind}">${L ? "Run again" : "Set up this test"}</button></div>`;
+    }).join("");
+    el.querySelectorAll("[data-run-type]").forEach((b) => b.addEventListener("click", () => {
+      const k = b.dataset.runType;
+      if (k === "drop") { location.hash = "#/shield"; return; }
+      $("#t-kind").value = k; renderParams();
+      $("#t-kind").scrollIntoView({ behavior: "smooth", block: "center" });
+    }));
   }
 
   function slider(id, label, min, max, step, value) {
@@ -479,7 +425,7 @@
       state.lab.test = t;
       if (!$("#t-chart")) { if (t.status !== "running") clearInterval(state.lab.poll); return; }
       renderTest(t);
-      if (t.status !== "running") { clearInterval(state.lab.poll); renderHistory(); pollHealth(); }
+      if (t.status !== "running") { clearInterval(state.lab.poll); renderHistory(); renderTypes(); pollHealth(); }
     }, 1000);
   }
 
@@ -776,33 +722,24 @@
   }
 
   // ------------------------------------------------------------------ router
+  const ROUTES = { "": ["overview", overviewPage], live: ["live", () => labPage(liveTab)], model: ["model", () => labPage(modelTab)], shield: ["shield", () => labPage(shieldTab)], repo: ["repo", () => labPage(repoTab)] };
   async function route() {
-    const hash = location.hash || "#/";
-    const [path, query] = hash.slice(1).split("?");
-    const params = new URLSearchParams(query || "");
-    const parts = path.split("/").filter(Boolean);
-    setActive(hash);
-    if (parts[0] !== "lab") { clearInterval(state.lab.poll); clearInterval(state.lab.shieldPoll); }
+    const parts = (location.hash || "#/").slice(1).split("?")[0].split("/").filter(Boolean);
+    const [page, render] = ROUTES[parts[0] || ""] || [null, null];
+    state.page = page;
+    setActive(page);
+    clearInterval(state.lab.shieldPoll);
     state.timers.forEach(clearInterval); state.timers = [];
     window.scrollTo(0, 0);
     try {
-      if (!parts.length) await home();
-      else if (parts[0] === "s") await listing(params);
-      else if (parts[0] === "c") await listing(params, parts[1]);
-      else if (parts[0] === "p") await productPage(parts[1]);
-      else if (parts[0] === "cart") await cartPage();
-      else if (parts[0] === "checkout") await checkoutPage();
-      else if (parts[0] === "order") orderPage(parts[1]);
-      else if (parts[0] === "lab") {
-        if (params.get("tab")) state.lab.tab = params.get("tab");
-        await labPage();
-      }
-      else view.innerHTML = `<div class="panel">Page not found. <a href="#/">Go home</a></div>`;
+      if (render) await render();
+      else view.innerHTML = `<section class="card"><h2>Page not found</h2><a href="#/">Back to overview</a></section>`;
     } catch (err) {
-      view.innerHTML = `<div class="panel"><h1>Something went wrong</h1><div class="notice bad">${esc(err.message)}</div><p class="muted small">If the store just started, its services may still be launching.</p></div>`;
+      view.innerHTML = `<section class="card"><h2>Something went wrong</h2><div class="notice bad">${esc(err.message)}</div><p class="muted small">If the server just started, the testbed services may still be launching.</p></section>`;
     }
   }
 
   window.addEventListener("hashchange", route);
-  initShell().then(route);
+  initShell();
+  route();
 })();

@@ -3,34 +3,29 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Bazaaro</title>
+  <title>SCOPE-X Lab</title>
   <link rel="stylesheet" href="/static/styles.css" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%230f6e66'/%3E%3Ctext x='16' y='22' font-size='17' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='800'%3Eb%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23111110'/%3E%3Ctext x='16' y='22' font-size='17' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='800'%3Ex%3C/text%3E%3C/svg%3E" />
 </head>
 <body>
-  <header class="topbar">
-    <div class="wrap">
-      <a class="logo" href="#/"><span class="logo-mark">b</span><span class="word">bazaar<em>o</em></span></a>
-      <form class="search" id="search-form">
-        <select id="search-cat" aria-label="Category"><option value="">All</option></select>
-        <input id="search-q" type="search" placeholder="Search headphones, tents, books…" aria-label="Search" />
-        <button type="submit">Search</button>
-      </form>
-      <nav class="nav">
-        <span class="health" id="health" title="Live store health, measured from real service calls">
-          <span class="dot" id="health-dot"></span><span id="health-text">checking…</span>
-        </span>
-        <a href="#/lab" id="nav-lab">Constraint Lab</a>
-        <a href="#/cart" id="nav-cart">Cart<span class="cart-count" id="cart-count">0</span></a>
-      </nav>
-    </div>
-  </header>
-  <div class="catbar"><div class="wrap" id="catbar"></div></div>
-  <div class="banner" id="banner"><div class="wrap" id="banner-text"></div></div>
-  <main><div class="wrap" id="view"></div></main>
-  <footer><div class="wrap">Bazaaro is a demo storefront on the SCOPE-X testbed. Orders run through the real cart → inventory → payment → order services; nothing is charged.</div></footer>
+  <div class="app">
+    <aside class="side">
+      <a class="brand" href="#/"><span class="mark">x</span><span>SCOPE-X <em>Lab</em></span></a>
+      <nav id="nav" class="nav" aria-label="Lab pages"></nav>
+      <div class="health-card" title="Live store health, measured from real service calls">
+        <span class="dot" id="health-dot"></span>
+        <div><b id="health-title">Checking…</b><div class="tiny" id="health-sub">–</div></div>
+      </div>
+    </aside>
+    <main class="main">
+      <header class="page-head">
+        <div><h1 id="page-title">Overview</h1><div class="muted small" id="page-sub"></div></div>
+      </header>
+      <div class="banner" id="banner"></div>
+      <div id="view"></div>
+    </main>
+  </div>
   <script src="/static/charts.js"></script>
-  <script src="/static/shield.js"></script>
   <script src="/static/app.js"></script>
 </body>
 </html>

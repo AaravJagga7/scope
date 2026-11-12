@@ -151,14 +151,29 @@ def categories() -> list[dict[str, str]]:
 
 
 @app.get("/api/products")
-def products(
+async def products(
     q: str = "",
     category: str = "",
     sort: str = "featured",
     max_price: float | None = None,
     fast: bool = False,
+    live: bool = False,
 ) -> list[dict[str, Any]]:
-    return [p.to_dict() for p in search(q, category, sort, max_price, fast)]
+    """Catalog search; ``live=true`` adds each item's real stock from inventory."""
+    items = [p.to_dict() for p in search(q, category, sort, max_price, fast)]
+    if live:
+        stocks = await asyncio.gather(*(_live_stock(i["id"]) for i in items))
+        for item, stock in zip(items, stocks, strict=True):
+            item["live_stock"] = stock
+    return items
+
+
+async def _live_stock(product_id: str) -> int | None:
+    try:
+        resp = await _call("inventory", "GET", f"{URLS['inventory']}/inventory/{product_id}")
+    except HTTPException:
+        return None
+    return resp.json()["available_qty"] if resp.status_code == 200 else None
 
 
 @app.get("/api/products/{product_id}")

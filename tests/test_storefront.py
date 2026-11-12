@@ -68,7 +68,7 @@ def test_products_api(client):
 
 
 def test_index_and_static_served(client):
-    assert "Bazaaro" in client.get("/").text
+    assert "SCOPE-X Lab" in client.get("/").text
     assert client.get("/static/app.js").status_code == 200
 
 

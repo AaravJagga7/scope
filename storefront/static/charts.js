@@ -132,5 +132,62 @@
     container.innerHTML = items.map((it) => `<span><i class="${it.dash ? "dash" : ""}" style="background:${it.color}"></i>${it.name}</span>`).join("");
   }
 
-  window.BZCharts = { lineChart, legend, css };
+  /**
+   * Rounded vertical bars with a hover bubble (dashboard style).
+   * opts: {bars:[{label, value, color, tip}], hLine:{y,label}, height, yUnit, empty}
+   */
+  function barChart(container, opts) {
+    container.innerHTML = "";
+    container.classList.add("chart", "bars");
+    const W = 720, H = opts.height || 250, m = { t: 30, r: 12, b: 30, l: 46 };
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": opts.title || "bar chart" }, container);
+    const bars = opts.bars || [];
+    if (!bars.length) {
+      el("text", { x: W / 2, y: H / 2, "text-anchor": "middle", fill: css("--ink-3"), "font-size": 13 }, svg).textContent = opts.empty || "No data yet";
+      return;
+    }
+    const top = Math.max(...bars.map((b) => b.value), opts.hLine ? opts.hLine.y : 0) * 1.1 || 1;
+    const ticks = niceTicks(0, top, 4);
+    const y1 = Math.max(top, ticks[ticks.length - 1]);
+    const sy = (v) => H - m.b - (v / y1) * (H - m.t - m.b);
+    const ink3 = css("--ink-3"), grid = css("--grid");
+    ticks.forEach((t) => {
+      el("line", { x1: m.l, x2: W - m.r, y1: sy(t), y2: sy(t), stroke: grid, "stroke-dasharray": "3 4" }, svg);
+      el("text", { x: m.l - 8, y: sy(t) + 4, "text-anchor": "end", fill: ink3, "font-size": 11 }, svg).textContent = fmt(t);
+    });
+    const slot = (W - m.l - m.r) / bars.length;
+    const bw = Math.max(4, Math.min(26, slot * 0.5));
+    const every = Math.ceil(bars.length / 14);
+    const bubble = el("g", { opacity: 0, "pointer-events": "none" }, svg);
+    const bubbleRect = el("rect", { rx: 11, height: 22, fill: css("--ink") }, bubble);
+    const bubbleText = el("text", { "text-anchor": "middle", fill: css("--surface"), "font-size": 11, "font-weight": 600 }, bubble);
+    bars.forEach((b, i) => {
+      const cx = m.l + slot * (i + 0.5);
+      const y = sy(Math.max(0, b.value));
+      const h = Math.max(2, H - m.b - y);
+      el("rect", { x: cx - bw / 2, y: H - m.b - (H - m.t - m.b), width: bw, height: H - m.t - m.b, rx: Math.min(8, bw / 2), fill: css("--well") }, svg);
+      const bar = el("rect", { x: cx - bw / 2, y: H - m.b - h, width: bw, height: h, rx: Math.min(8, bw / 2, h / 2), fill: b.color || css("--ink") }, svg);
+      if (i % every === 0) el("text", { x: cx, y: H - m.b + 18, "text-anchor": "middle", fill: ink3, "font-size": 11 }, svg).textContent = b.label;
+      const hit = el("rect", { x: cx - slot / 2, y: m.t, width: slot, height: H - m.t - m.b, fill: "transparent" }, svg);
+      const show = () => {
+        const label = b.tip || fmt(b.value) + (opts.yUnit || "");
+        bubbleText.textContent = label;
+        const tw = label.length * 6.4 + 18;
+        const by = Math.max(2, H - m.b - h - 30);
+        bubbleRect.setAttribute("x", cx - tw / 2); bubbleRect.setAttribute("y", by); bubbleRect.setAttribute("width", tw);
+        bubbleText.setAttribute("x", cx); bubbleText.setAttribute("y", by + 15);
+        bubble.setAttribute("opacity", 1); bar.setAttribute("opacity", 0.8);
+      };
+      hit.addEventListener("mouseenter", show);
+      hit.addEventListener("mouseleave", () => { bubble.setAttribute("opacity", 0); bar.setAttribute("opacity", 1); });
+    });
+    if (opts.hLine) {
+      const yy = sy(opts.hLine.y);
+      el("line", { x1: m.l, x2: W - m.r, y1: yy, y2: yy, stroke: css("--bad"), "stroke-width": 1.5, "stroke-dasharray": "6 4" }, svg);
+      el("text", { x: W - m.r, y: yy - 6, "text-anchor": "end", fill: css("--bad"), "font-size": 11, "font-weight": 600 }, svg).textContent = opts.hLine.label;
+    }
+    svg.appendChild(bubble);
+  }
+
+  window.BZCharts = { lineChart, barChart, legend, css };
 })();
