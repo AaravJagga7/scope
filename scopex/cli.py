@@ -242,6 +242,83 @@ def build_parser() -> argparse.ArgumentParser:
         help="Save result JSON to specified file path",
     )
 
+    # Subcommand: decide (Task 17)
+    dec_parser = subparsers.add_parser(
+        "decide",
+        help="Adaptive Scaling Decision Engine: recommend an action given live metrics",
+    )
+    dec_parser.add_argument(
+        "--profile",
+        "-p",
+        choices=["flash_sale", "normal", "ramp", "viral_product", "slow_payment_api"],
+        default="flash_sale",
+        help="Workload traffic profile (default: flash_sale)",
+    )
+    dec_parser.add_argument(
+        "--rps",
+        type=float,
+        default=700.0,
+        help="Current request rate in RPS (default: 700)",
+    )
+    dec_parser.add_argument(
+        "--replicas",
+        type=int,
+        default=4,
+        help="Current number of Checkout replicas (default: 4)",
+    )
+    dec_parser.add_argument(
+        "--db-pool",
+        type=int,
+        default=48,
+        dest="db_pool",
+        help="Current DB pool size per replica (default: 48)",
+    )
+    dec_parser.add_argument(
+        "--cpu-util",
+        type=float,
+        default=85.0,
+        dest="cpu_util",
+        help="Current CPU utilisation %% (default: 85)",
+    )
+    dec_parser.add_argument(
+        "--p95",
+        type=float,
+        default=420.0,
+        help="Current p95 latency in ms (default: 420)",
+    )
+    dec_parser.add_argument(
+        "--error-rate",
+        type=float,
+        default=0.5,
+        dest="error_rate",
+        help="Current error rate %% (default: 0.5)",
+    )
+    dec_parser.add_argument(
+        "--db-limit",
+        type=int,
+        default=200,
+        dest="db_limit",
+        help="PostgreSQL total connection ceiling (default: 200)",
+    )
+    dec_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        default=True,
+        dest="dry_run",
+        help="Simulate execution without touching the cluster (default: True)",
+    )
+    dec_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output raw JSON instead of formatted report",
+    )
+    dec_parser.add_argument(
+        "--json-output",
+        type=str,
+        default=None,
+        help="Save result JSON to specified file path",
+    )
+
     return parser
 
 
@@ -464,6 +541,59 @@ def handle_optimize(args: argparse.Namespace) -> int:
     return 0
 
 
+def handle_decide(args: argparse.Namespace) -> int:
+    """Handles 'scopex decide' — adaptive scaling recommendation."""
+    import json
+
+    from scopex.decision.engine import AdaptiveDecisionEngine, LiveMetrics
+    from scopex.decision.executor import ExecutionManager
+
+    metrics = LiveMetrics(
+        workload_rps=args.rps,
+        cpu_utilization_pct=args.cpu_util,
+        p95_latency_ms=args.p95,
+        error_rate_pct=args.error_rate,
+        current_replicas=args.replicas,
+        current_db_pool_size=args.db_pool,
+        db_connection_limit=args.db_limit,
+        profile=args.profile,
+    )
+
+    engine = AdaptiveDecisionEngine()
+    try:
+        rec = engine.evaluate_and_recommend(metrics)
+    except Exception as exc:
+        print(f"Error: Decision engine failed: {exc}")
+        return 1
+
+    # Dry-run execution
+    executor = ExecutionManager(live=False)
+    result = executor.apply_decision(rec, dry_run=True)
+
+    if args.json:
+        output = {
+            "recommendation": rec.to_dict(),
+            "execution": result.to_dict(),
+        }
+        print(json.dumps(output, indent=2))
+    else:
+        print("\n" + rec.format_report() + "\n")
+        print(result.format_summary() + "\n")
+
+    if args.json_output:
+        out_path = Path(args.json_output)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump(
+                {"recommendation": rec.to_dict(), "execution": result.to_dict()},
+                f,
+                indent=2,
+            )
+        print(f"✓ Decision result saved to: {out_path}\n")
+
+    return 0
+
+
 def handle_compare(args: argparse.Namespace) -> int:
     """Handles 'scopex compare' execution across autoscaling strategies."""
     import json
@@ -517,6 +647,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return handle_optimize(args)
     if args.subcommand == "compare":
         return handle_compare(args)
+    if args.subcommand == "decide":
+        return handle_decide(args)
 
     parser.print_help()
     return 1
